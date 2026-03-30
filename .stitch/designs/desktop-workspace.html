@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lenticular Studio | Professional Image Interlacing</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#e94560",
+                        surface: "#16213e",
+                        background: "#1a1a2e",
+                        panel: "#0f3460",
+                        accent: "#533483"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #1a1a2e;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #0f3460;
+            border-radius: 10px;
+        }
+        .preview-glow {
+            box-shadow: 0 0 40px rgba(233, 69, 96, 0.1);
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-[#1a1a2e] text-slate-400 font-sans antialiased text-sm tracking-tight docked full-width top-0 border-b border-[#0f3460] shadow-sm flex justify-between items-center h-14 px-4 w-full z-50">
+<div class="flex items-center gap-8">
+<div class="text-xl font-black text-[#e94560] tracking-tighter font-headline flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="blur_on">blur_on</span>
+                Lenticular Studio
+            </div>
+<nav class="hidden md:flex items-center gap-6">
+<a class="text-[#e94560] font-semibold hover:bg-[#16213e] hover:text-white transition-colors px-2 py-1 rounded" href="#">File</a>
+<a class="text-slate-400 hover:bg-[#16213e] hover:text-white transition-colors px-2 py-1 rounded" href="#">Edit</a>
+<a class="text-slate-400 hover:bg-[#16213e] hover:text-white transition-colors px-2 py-1 rounded" href="#">View</a>
+<a class="text-slate-400 hover:bg-[#16213e] hover:text-white transition-colors px-2 py-1 rounded" href="#">Lens</a>
+<a class="text-slate-400 hover:bg-[#16213e] hover:text-white transition-colors px-2 py-1 rounded" href="#">Help</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-slate-400 hover:bg-[#16213e] hover:text-white transition-all active:opacity-80">
+<span class="material-symbols-outlined text-lg" data-icon="visibility">visibility</span>
+                Preview Mode
+            </button>
+<button class="bg-[#e94560] text-white px-5 py-1.5 rounded-full font-bold hover:brightness-110 active:opacity-80 transition-all shadow-lg shadow-primary/20">
+                Export Interlaced
+            </button>
+<div class="flex items-center gap-2 ml-2 border-l border-[#0f3460] pl-4">
+<button class="text-slate-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<button class="text-slate-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<main class="flex-1 flex overflow-hidden">
+<!-- SideNavBar / Left Controls -->
+<aside class="bg-[#16213e] flex flex-col w-[320px] border-r border-[#0f3460] shadow-xl overflow-y-auto custom-scrollbar">
+<!-- Project Header -->
+<div class="p-4 border-b border-[#0f3460]">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 rounded bg-[#0f3460] overflow-hidden">
+<img alt="Thumbnail" class="w-full h-full object-cover" data-alt="a small cinematic thumbnail of a misty mountain range during blue hour with sharp peaks" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBem2DBYjcLwz-VhRNdWoIhMBJLrHddruzfb7Rn3LjmCSKwTpekUt8SFgGdvVkMQxt2fcuNq3o7hvdoyjCMAGs9L7I6FkIYfF08ylNusO0mPh7QMv8TO_nVYLY-MihrAV6HUSGCBn3vHLtXTHwfTrOHj4IkDswxBsebObUktfCY4mmPs5WQ9VlyBl3pWb-e-GZPL56A6VfnlEOsHaCnszOCLgWE4Cr_SyENl8QrQuvDHTvqFtC740FJ_AUljmcjNLnJUB1kKRYUBAVh"/>
+</div>
+<div>
+<h3 class="text-xs font-bold uppercase tracking-wider text-white">Project Workspace</h3>
+<p class="text-[10px] text-slate-400">12 Frames Loaded</p>
+</div>
+</div>
+</div>
+<!-- Images Section -->
+<section class="p-4 space-y-3">
+<div class="flex justify-between items-center">
+<span class="text-xs font-medium uppercase tracking-wider text-slate-400">Images</span>
+<span class="bg-[#e94560] text-[10px] font-bold px-2 py-0.5 rounded-full text-white">4/12</span>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<!-- Thumbnail 1 -->
+<div class="relative group aspect-square rounded-lg border-2 border-[#e94560] overflow-hidden cursor-pointer">
+<img alt="Frame 1" class="w-full h-full object-cover" data-alt="vibrant mountain peaks with green pine trees under a clear blue sky in daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZ-N_ON-_WWgNptvZEI9qqcM5d6UtV3H6N9b6Mo84xVFXOwLhoeVT-1Whlc8fhUrLrmxpHH9iWJDP96LRMFuN1nRgZj9COazjzFyFb99EiES0LJQJ2qt_NTvtsqTAlCKNKvPlKgzknE8tDNO62qe6DjOI-g7ydJzZ7ca3NHC3PZMUrZATa5z-uPNcDEw2WH8lgY0DTIJGLnggsKXHqO_1N37xWFccqjnu9lzYcPSXGwDFia0Wqde_oI5LvvAFU06eAtTgRrPdhioMN"/>
+<button class="absolute top-1 right-1 bg-black/50 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-xs" data-icon="close">close</span>
+</button>
+</div>
+<!-- Thumbnail 2 -->
+<div class="relative group aspect-square rounded-lg border-2 border-transparent hover:border-slate-500 overflow-hidden cursor-pointer">
+<img alt="Frame 2" class="w-full h-full object-cover" data-alt="lush green waterfall cascading into a crystal clear pool surrounded by ferns" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCR2SJsvpfpDEA82kKl--xrhJsTQqsxQwQtyv53gN8QAlmSVTS0xtPC7nflj-A1mVi9a1v8oQuFfqx9b6JiGEXUcnR0WDuTjc7WWSlb0Eprv0fxCNjDCHDmDNqakAgIVjvUVrUUxvYx3W4p7sMbOwJ-hmNV1S6BQ8IjeeyUnmG5TQh3YuPx_i_uUI8Bwbm2w6YR0BuFvlIcH5WPrW4wuu05-dB1H41zfz1gF3CA9iWQEoPw-cVJAvX50eGWRfQfFCqYvqFqmK6T9xpI"/>
+<button class="absolute top-1 right-1 bg-black/50 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-xs" data-icon="close">close</span>
+</button>
+</div>
+<!-- Thumbnail 3 -->
+<div class="relative group aspect-square rounded-lg border-2 border-transparent hover:border-slate-500 overflow-hidden cursor-pointer">
+<img alt="Frame 3" class="w-full h-full object-cover" data-alt="serene lake at sunrise reflecting orange clouds and distant blue mountains" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeskQ4hhGJSQwUpGCf-Bv5_S1Ws_tbfj2PyNunxBZ1yqNXo08oHoLrd4lOEZElUwldLvHYRIWDo_HNsXB9zN_dQqizo76Y5ocZ4_YeYlY2qYval85kCge2_Xhc_GYJsEJpSwPAIvmVMN_LEwDOKO8azQY3TRh6jpKajVc8jEpub_pwDdFgZ28yJB1WbVrTM5IVAkmj0hRKHoYTMFDTQUrQU2qV48xfZ5BHqwNLdj7DyaEqrIu0dJGMQ0p-a3QG574z0Q3U23HF545k"/>
+<button class="absolute top-1 right-1 bg-black/50 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-xs" data-icon="close">close</span>
+</button>
+</div>
+<!-- Add Button -->
+<button class="aspect-square rounded-lg border-2 border-dashed border-[#0f3460] flex flex-col items-center justify-center text-slate-500 hover:text-slate-300 hover:border-slate-400 transition-all">
+<span class="material-symbols-outlined text-lg" data-icon="add">add</span>
+<span class="text-[10px] uppercase font-bold mt-1">Add More</span>
+</button>
+</div>
+</section>
+<!-- Effect Type -->
+<section class="p-4 space-y-3 border-t border-[#0f3460]/50">
+<span class="text-xs font-medium uppercase tracking-wider text-slate-400">Effect</span>
+<div class="grid grid-cols-1 gap-1">
+<button class="border-l-4 border-[#e94560] bg-[#0f3460] text-white py-2 px-3 flex items-center gap-3 duration-150 ease-in-out rounded-r">
+<span class="material-symbols-outlined text-lg" data-icon="swap_horiz">swap_horiz</span>
+<span class="text-[10px] font-bold tracking-widest uppercase">Flip</span>
+</button>
+<button class="text-slate-400 py-2 px-3 flex items-center gap-3 border-l-4 border-transparent hover:bg-[#0f3460] hover:text-slate-200 duration-150 ease-in-out">
+<span class="material-symbols-outlined text-lg" data-icon="play_circle">play_circle</span>
+<span class="text-[10px] font-bold tracking-widest uppercase">Animation</span>
+</button>
+<button class="text-slate-400 py-2 px-3 flex items-center gap-3 border-l-4 border-transparent hover:bg-[#0f3460] hover:text-slate-200 duration-150 ease-in-out">
+<span class="material-symbols-outlined text-lg" data-icon="layers">layers</span>
+<span class="text-[10px] font-bold tracking-widest uppercase">3D Depth</span>
+</button>
+</div>
+</section>
+<!-- Print Settings -->
+<section class="p-4 space-y-4 border-t border-[#0f3460]/50">
+<span class="text-xs font-medium uppercase tracking-wider text-slate-400">Print Settings</span>
+<div class="grid grid-cols-2 gap-3">
+<div class="space-y-1">
+<label class="text-[10px] text-slate-500 uppercase font-bold">LPI</label>
+<select class="w-full bg-[#0f3460] border-none rounded text-xs py-1.5 focus:ring-1 focus:ring-primary">
+<option>60.0</option>
+<option>40.0</option>
+<option>20.0</option>
+</select>
+</div>
+<div class="space-y-1">
+<label class="text-[10px] text-slate-500 uppercase font-bold">DPI</label>
+<select class="w-full bg-[#0f3460] border-none rounded text-xs py-1.5 focus:ring-1 focus:ring-primary">
+<option>300</option>
+<option>600</option>
+<option>1200</option>
+</select>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div class="space-y-1">
+<label class="text-[10px] text-slate-500 uppercase font-bold">Width (in)</label>
+<input class="w-full bg-[#0f3460] border-none rounded text-xs py-1.5 focus:ring-1 focus:ring-primary" type="text" value="4.0"/>
+</div>
+<div class="space-y-1">
+<label class="text-[10px] text-slate-500 uppercase font-bold">Height (in)</label>
+<input class="w-full bg-[#0f3460] border-none rounded text-xs py-1.5 focus:ring-1 focus:ring-primary" type="text" value="6.0"/>
+</div>
+</div>
+<div class="bg-black/20 p-2 rounded">
+<p class="text-[10px] text-slate-500 font-mono text-center">1200 × 1800 px • 5 px/lenticule</p>
+</div>
+</section>
+<!-- Effect Settings -->
+<section class="p-4 space-y-4 border-t border-[#0f3460]/50 mb-8">
+<span class="text-xs font-medium uppercase tracking-wider text-slate-400">Effect Settings</span>
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="text-[10px] text-slate-500 uppercase font-bold">Transition Speed</label>
+<span class="text-[10px] text-[#e94560] font-bold">45%</span>
+</div>
+<input class="w-full accent-[#e94560] bg-[#0f3460] h-1 rounded-lg appearance-none cursor-pointer" type="range"/>
+</div>
+</section>
+</aside>
+<!-- Main Workspace Canvas -->
+<section class="flex-1 flex flex-col bg-[#1a1a2e] relative">
+<div class="flex-1 flex flex-col p-6 overflow-y-auto custom-scrollbar">
+<!-- Preview Canvas Area -->
+<div class="relative w-full h-[60%] min-h-[400px] bg-[#0f3460] rounded-xl border border-[#0f3460] overflow-hidden group shadow-2xl preview-glow">
+<img alt="Main Preview" class="w-full h-full object-cover opacity-80 mix-blend-screen" data-alt="large cinematic landscape of mountain peaks with a subtle interlaced texture overlay and soft mist" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBoFQ5UmkWaPShzRxrzjgSYJU_hB19QscVw5c89HbT6pzCLa0Xv2yqxiLMn1OlHLoVtBFoWmdzMmak7QJ2DcySLIWOA00gmhmq6VWc9lQPCQ1qOAihYFK1d54mZH-7VLeEiLnkSm67o88gY_kYgibF-UTI2Z-zZZEBHcv376XC7LsDpD9iYhc9_IaFr-YHtWHasAqEqmzgdggxkIsgpIS1t5nsEgf8jwLUre6_CoLzckQkr56sesIykof7CuRV0rKjxvwiF-a4t6umz"/>
+<!-- Gradient Overlay for "depth" feel -->
+<div class="absolute inset-0 bg-gradient-to-t from-[#1a1a2e]/60 to-transparent pointer-events-none"></div>
+<!-- Interactive Hint -->
+<div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+<span class="material-symbols-outlined text-white/70 animate-pulse" data-icon="mouse">mouse</span>
+<span class="text-xs text-white/90 font-medium">Move mouse left ↔ right to preview effect</span>
+</div>
+</div>
+<!-- Preview Controls -->
+<div class="mt-6 bg-[#16213e] p-4 rounded-xl border border-[#0f3460] flex items-center gap-8">
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 rounded-full bg-[#0f3460] hover:bg-slate-700 flex items-center justify-center text-white transition-all">
+<span class="material-symbols-outlined" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+<div class="flex flex-col items-center ml-2">
+<span class="text-[9px] text-slate-500 uppercase font-bold mb-1">Auto-play</span>
+<div class="w-10 h-5 bg-[#e94560] rounded-full relative cursor-pointer p-1">
+<div class="w-3 h-3 bg-white rounded-full absolute right-1"></div>
+</div>
+</div>
+</div>
+<div class="flex-1 grid grid-cols-2 gap-8">
+<div class="space-y-1">
+<div class="flex justify-between items-center">
+<label class="text-[10px] text-slate-500 uppercase font-bold">Speed</label>
+<span class="text-[10px] text-slate-300 font-mono">1.2s</span>
+</div>
+<input class="w-full accent-[#e94560] h-1 bg-[#0f3460] rounded-lg appearance-none cursor-pointer" type="range"/>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between items-center">
+<label class="text-[10px] text-slate-500 uppercase font-bold">Sensitivity</label>
+<span class="text-[10px] text-slate-300 font-mono">80%</span>
+</div>
+<input class="w-full accent-[#e94560] h-1 bg-[#0f3460] rounded-lg appearance-none cursor-pointer" type="range"/>
+</div>
+</div>
+</div>
+<!-- Alignment Editor Panel -->
+<div class="mt-6 bg-[#16213e] rounded-xl border border-[#0f3460] overflow-hidden">
+<button class="w-full p-4 flex justify-between items-center hover:bg-white/5 transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#e94560]" data-icon="grid_view">grid_view</span>
+<span class="text-xs font-bold uppercase tracking-wider text-white">Alignment Tool</span>
+</div>
+<span class="material-symbols-outlined text-slate-500" data-icon="expand_less">expand_less</span>
+</button>
+<div class="p-4 border-t border-[#0f3460] flex flex-wrap gap-4">
+<button class="bg-[#0f3460] hover:bg-slate-700 text-xs px-4 py-2 rounded flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="align_center">align_center</span>
+                            Center View
+                        </button>
+<button class="bg-[#0f3460] hover:bg-slate-700 text-xs px-4 py-2 rounded flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="format_distribute_horizontal">horizontal_distribute</span>
+                            Distribute
+                        </button>
+<button class="bg-[#0f3460] hover:bg-slate-700 text-xs px-4 py-2 rounded flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="grid_on">grid_on</span>
+                            Snap to Grid
+                        </button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Status Bar -->
+<footer class="bg-[#0f3460] font-mono text-[10px] uppercase fixed bottom-0 w-full h-8 border-t border-[#1a1a2e] flex justify-between items-center px-4 py-1 z-50">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 text-emerald-400">
+<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+<span>Ready</span>
+</div>
+<span class="text-slate-400 border-l border-slate-700 pl-4">4 images loaded</span>
+<span class="text-slate-400 border-l border-slate-700 pl-4">Flip mode</span>
+<span class="text-slate-400 border-l border-slate-700 pl-4">LPI: 60.0</span>
+<span class="text-slate-400 border-l border-slate-700 pl-4">DPI: 300</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2 text-slate-400">
+<span class="material-symbols-outlined text-[14px]" data-icon="memory">memory</span>
+<span>Memory: 42 MB</span>
+</div>
+<div class="flex items-center gap-2 text-slate-400">
+<span class="material-symbols-outlined text-[14px]" data-icon="speed">speed</span>
+<span>GPU Active</span>
+</div>
+</div>
+</footer>
+</body></html>

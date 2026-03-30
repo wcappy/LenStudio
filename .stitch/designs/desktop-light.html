@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary-fixed-variant": "#4c4354",
+              "inverse-primary": "#ffb2b7",
+              "tertiary": "#62586a",
+              "on-tertiary": "#ffffff",
+              "on-surface-variant": "#5a4042",
+              "tertiary-container": "#7b7183",
+              "on-secondary-fixed-variant": "#42474d",
+              "surface-tint": "#b71d3f",
+              "surface-container-highest": "#e0e3e6",
+              "primary-container": "#d63653",
+              "secondary-fixed": "#dee3ea",
+              "background": "#f7f9fc",
+              "surface-container-lowest": "#ffffff",
+              "surface-container-high": "#e6e8eb",
+              "on-primary-fixed": "#40000e",
+              "primary-fixed": "#ffdadb",
+              "error": "#ba1a1a",
+              "secondary": "#595f65",
+              "on-error-container": "#93000a",
+              "error-container": "#ffdad6",
+              "surface-container-low": "#f2f4f7",
+              "surface-dim": "#d8dadd",
+              "on-tertiary-fixed": "#201927",
+              "on-error": "#ffffff",
+              "on-secondary-fixed": "#171c21",
+              "outline": "#8e7071",
+              "surface-bright": "#f7f9fc",
+              "on-tertiary-container": "#fffbff",
+              "tertiary-fixed": "#ebdef3",
+              "surface-container": "#eceef1",
+              "surface-variant": "#e0e3e6",
+              "on-surface": "#191c1e",
+              "on-primary-container": "#fffbff",
+              "primary": "#b3193d",
+              "secondary-fixed-dim": "#c2c7ce",
+              "inverse-surface": "#2d3133",
+              "surface": "#f7f9fc",
+              "on-secondary-container": "#5f656b",
+              "secondary-container": "#dee3ea",
+              "on-secondary": "#ffffff",
+              "primary-fixed-dim": "#ffb2b7",
+              "on-primary-fixed-variant": "#91002b",
+              "on-primary": "#ffffff",
+              "inverse-on-surface": "#eff1f4",
+              "on-background": "#191c1e",
+              "outline-variant": "#e2bebf",
+              "tertiary-fixed-dim": "#cec2d6"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .headline-font { font-family: 'Space Grotesk', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary-container selection:text-on-primary-container overflow-hidden h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-6 w-full fixed top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 h-12">
+<div class="flex items-center gap-3">
+<div class="w-6 h-6 bg-gradient-to-br from-primary to-primary-container rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-xs" style="font-variation-settings: 'FILL' 1;">layers</span>
+</div>
+<span class="text-xl font-bold tracking-tighter text-[#1a1a2e] dark:text-slate-100 headline-font">Lenticular Studio</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors p-1.5 rounded-lg">help</button>
+<button class="bg-gradient-to-br from-primary to-primary-container text-white px-5 py-1 rounded font-medium text-sm hover:opacity-90 active:scale-[0.99] transition-all duration-150 shadow-sm">
+                Export
+            </button>
+</div>
+</header>
+<div class="flex flex-1 pt-12 pb-8">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-12 bottom-8 w-80 flex flex-col p-4 space-y-6 overflow-y-auto bg-surface-container-low border-r border-outline-variant/15">
+<div class="space-y-1">
+<p class="headline-font text-sm uppercase tracking-widest text-secondary font-bold">Workspace</p>
+<p class="text-xs text-secondary/70">Lenticular Project</p>
+</div>
+<!-- Images Section -->
+<section class="space-y-3">
+<div class="flex justify-between items-center">
+<h3 class="headline-font text-[13px] font-bold uppercase tracking-wider text-on-surface">Images (4/12)</h3>
+<button class="text-primary text-[11px] font-bold hover:underline">+ ADD MORE</button>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div class="relative group aspect-square rounded-lg overflow-hidden border-2 border-primary ring-2 ring-primary/10">
+<img class="w-full h-full object-cover" data-alt="high contrast landscape of snow-capped mountain peaks reflecting in a crystal clear alpine lake at sunrise" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5lsiIc6LPrVyhxIMhL4MEn9sM6TnP1hhOE-8Qrom3uAhazdBio1YC4HxO9NHW72wMA-bIV8xRxncUJA_N0VI4wd76ynQaTbETsa-pe8MpEda0rtqDlmfjCdY4B80rQpJnso9UR0cZcS6Sg0v78zrauuMrTAhIDDgnq9u57OMozfO0pm5QFnNWHjMXTV5NGhw53acabelhQKoHqsxEakqGgOK2jHwbrMWt29cXIh5-8sT1sCsFGBEFrlVsrP5dmypyJwjf1ryYaDzU"/>
+<button class="absolute top-1 right-1 bg-white/90 rounded-full p-0.5 shadow opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-xs text-error">close</span>
+</button>
+</div>
+<div class="relative group aspect-square rounded-lg overflow-hidden border border-outline-variant/30 hover:border-primary/50 transition-colors">
+<img class="w-full h-full object-cover grayscale-[0.2]" data-alt="misty forest clearing with lush green trees and soft morning fog in an ethereal landscape" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBaqxorSy9gcR10ZetwcFvW3K966naLP1Vm97Q05iZPUKOcXVZOOzNExdgh3J--GHjXecNTRlB1Doi9GlDAq22ASZaZIhLmrUR6Ip9HFFoFDMG8aS2MAAHXCmRTScuhKT9w2HaV3--xRYNYEOwsnkjPyYbO3eiXxhm5EdM22RPdIgGfiS5X-VLhVj_sixYdW7y5w8PeHFaITK_WwgHyves08WI2QI4OzQZkH0g8EA071k77aXAFBhg2bp9I3lXNfT31kpwCHR-sBDb4"/>
+<button class="absolute top-1 right-1 bg-white/90 rounded-full p-0.5 shadow opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-xs text-error">close</span>
+</button>
+</div>
+<div class="relative group aspect-square rounded-lg overflow-hidden border border-outline-variant/30">
+<img class="w-full h-full object-cover grayscale-[0.2]" data-alt="aerial perspective of turquoise coastal waters crashing against white limestone cliffs during a sunny day" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4wjSmmrz5mLb3Muc_FMEsyfhv5GB8KMg6tqp_iik2JAqe6pcUjKu2v1iQX1KtAKT88fyL7YevYyp1Tb9UGicOnBFewfEMiJS-Um0rzHcjgtKo6XP_aBtght5fhrKa5R6tI-AQFBKiWg3-WExIWfigKuDo0Y8Bp8Z41DGJUsVdQlQgcv3A76EgwNiau1ZtdZ7wwgkidLqjn1-07kpNq6bW7aaTkYpm1BxZu5KFaPFXhs9qtLCXZPMjCDPw8CdLK6RLwbdHJdBxZdP6"/>
+<button class="absolute top-1 right-1 bg-white/90 rounded-full p-0.5 shadow opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-xs text-error">close</span>
+</button>
+</div>
+<div class="relative group aspect-square rounded-lg overflow-hidden border border-outline-variant/30">
+<img class="w-full h-full object-cover grayscale-[0.2]" data-alt="enchanting sunlight beams filtering through a dense canopy of ancient redwood trees in a deep forest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXfOdAzJ6pQ8f4aIbmdzfmDlF2q2OfXmNFAgLZSXlwnKUoeHQd7W8kmQd_6uirHAbjUSFlGPevDnbtIJoMpeZjfSfnK9YbbwjN9Rp58UUZBLXNfgo1SdDgEI-x832Ys3v92TC5sJJzTwdsSUxa6LjmlFcYZqWrSCYvUsLdfCq2hrLHiKCvkIAalXo8JpnuzGmqnk-UjTcP1jf0xP8ICETq_6Ckb3g1wbM8r4ZpR5TJG5X61HdFePCIqN2Ht5yrAVoj3tB-pWO2O4AQ"/>
+<button class="absolute top-1 right-1 bg-white/90 rounded-full p-0.5 shadow opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-xs text-error">close</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Effect Section -->
+<section class="space-y-3">
+<h3 class="headline-font text-[13px] font-bold uppercase tracking-wider text-on-surface">Effect</h3>
+<div class="space-y-1">
+<button class="w-full flex items-center gap-3 px-3 py-2 bg-white dark:bg-slate-900 text-[#1a1a2e] dark:text-white font-semibold rounded-lg shadow-sm border border-primary/10">
+<span class="material-symbols-outlined text-primary text-sm">image</span>
+<span class="text-[13px]">Flip</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2 text-[#5a6275] dark:text-slate-400 hover:bg-[#e6e8eb] dark:hover:bg-slate-800 rounded-lg transition-all hover:translate-x-1">
+<span class="material-symbols-outlined text-sm">magic_button</span>
+<span class="text-[13px]">Animation</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2 text-[#5a6275] dark:text-slate-400 hover:bg-[#e6e8eb] dark:hover:bg-slate-800 rounded-lg transition-all hover:translate-x-1">
+<span class="material-symbols-outlined text-sm">view_in_ar</span>
+<span class="text-[13px]">3D Depth</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2 text-[#5a6275] dark:text-slate-400 hover:bg-[#e6e8eb] dark:hover:bg-slate-800 rounded-lg transition-all hover:translate-x-1">
+<span class="material-symbols-outlined text-sm">zoom_in</span>
+<span class="text-[13px]">Zoom</span>
+</button>
+</div>
+</section>
+<!-- Print Settings -->
+<section class="space-y-4">
+<h3 class="headline-font text-[13px] font-bold uppercase tracking-wider text-on-surface">Print Settings</h3>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-1">
+<label class="text-[10px] font-bold text-secondary-container-on uppercase tracking-tighter">LPI (Lenses per Inch)</label>
+<select class="w-full bg-surface-container-high border-none rounded-lg text-xs py-2 px-3 focus:ring-1 focus:ring-primary">
+<option>60</option>
+<option>75</option>
+<option>100</option>
+</select>
+</div>
+<div class="space-y-1">
+<label class="text-[10px] font-bold text-secondary-container-on uppercase tracking-tighter">DPI (Printing)</label>
+<select class="w-full bg-surface-container-high border-none rounded-lg text-xs py-2 px-3 focus:ring-1 focus:ring-primary">
+<option>300</option>
+<option>600</option>
+<option>1200</option>
+</select>
+</div>
+</div>
+<div class="space-y-1">
+<label class="text-[10px] font-bold text-secondary-container-on uppercase tracking-tighter">Output Size (Inches)</label>
+<div class="flex items-center gap-2">
+<input class="w-full bg-surface-container-high border-none rounded-lg text-xs py-2 px-3 focus:ring-1 focus:ring-primary text-center" type="text" value="4.0"/>
+<span class="text-secondary text-xs">×</span>
+<input class="w-full bg-surface-container-high border-none rounded-lg text-xs py-2 px-3 focus:ring-1 focus:ring-primary text-center" type="text" value="6.0"/>
+</div>
+</div>
+<div class="p-3 bg-secondary-container/30 rounded-lg">
+<p class="text-[11px] font-mono text-secondary leading-relaxed">
+                        1200 × 1800 px <br/>
+                        5 px / lenticule
+                    </p>
+</div>
+</section>
+<!-- Effect Settings -->
+<section class="space-y-4">
+<h3 class="headline-font text-[13px] font-bold uppercase tracking-wider text-on-surface">Effect Settings</h3>
+<div class="space-y-2">
+<div class="flex justify-between">
+<label class="text-[11px] text-secondary">Transition Speed</label>
+<span class="text-[11px] font-bold text-primary">0.8s</span>
+</div>
+<input class="w-full h-1 bg-secondary-container rounded-lg appearance-none cursor-pointer accent-primary" type="range"/>
+</div>
+</section>
+</aside>
+<!-- Main Workspace -->
+<main class="ml-80 flex-1 flex flex-col bg-white overflow-hidden relative">
+<div class="flex-1 flex flex-col items-center justify-center p-8">
+<!-- Large Preview Canvas -->
+<div class="relative group max-w-4xl w-full aspect-[4/3] bg-surface-container-lowest rounded shadow-2xl border border-slate-200 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="high resolution cinematic wide shot of a pristine mountain lake reflecting a jagged mountain range at dawn with misty atmosphere" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAp45tY59HZ3gQkiP4tiaZnBSvCki7OmpuJ67nywt9p1r-HW3PbeuxvECVLTJLzfyeINgdyxxAalIC5wL078_goPa6Vs4EV6egXmPR6c2wQ0Bw3kYI7rDGkxbe1MwFIwKxreeG2MkgE2tHQ0FWulu73X17wKGD1bttZ5_qO-mh6DTSXCi8vKV56iwcUO-VORrUmlQW0zW30T5hEmfOg2Bt_qei6v6u_DqNxPYalDNef5h3lXAVLKRS2y72mC9eBUw5XwzUcwkob5zPD"/>
+<!-- Glassmorphism Alignment Tool (Floating) -->
+<div class="absolute top-4 left-4 bg-white/70 backdrop-blur-xl p-2 rounded-lg border border-white/50 shadow-lg space-y-2 opacity-90 hover:opacity-100 transition-opacity">
+<button class="w-8 h-8 flex items-center justify-center hover:bg-white rounded transition-colors" title="Center View">
+<span class="material-symbols-outlined text-sm">center_focus_strong</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center hover:bg-white rounded transition-colors" title="Distribute">
+<span class="material-symbols-outlined text-sm">align_horizontal_center</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center hover:bg-white rounded transition-colors" title="Snap to Grid">
+<span class="material-symbols-outlined text-sm">grid_view</span>
+</button>
+</div>
+</div>
+<div class="mt-6 text-center">
+<p class="text-secondary text-sm flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-base">mouse</span>
+                        Move mouse ↔ to preview
+                    </p>
+</div>
+<!-- Preview Controls Bar -->
+<div class="mt-8 bg-[#e8edf4] px-6 py-3 rounded-full flex items-center gap-8 shadow-sm border border-white">
+<div class="flex items-center gap-2">
+<button class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-primary shadow-sm active:scale-95 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+<div class="h-4 w-px bg-slate-300 mx-2"></div>
+<label class="flex items-center gap-2 cursor-pointer">
+<div class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+</div>
+<span class="text-[11px] font-bold uppercase tracking-wider text-secondary">Auto-play</span>
+</label>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-sm">speed</span>
+<input class="w-24 h-1 bg-white rounded-lg appearance-none cursor-pointer accent-primary" type="range"/>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-sm">pinch</span>
+<input class="w-24 h-1 bg-white rounded-lg appearance-none cursor-pointer accent-primary" type="range"/>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Footer Status Bar -->
+<footer class="fixed bottom-0 left-0 w-full h-8 flex justify-between items-center px-4 z-40 bg-[#f2f4f7] dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-4">
+<p class="font-mono text-[11px] tracking-tight text-[#5a6275] dark:text-slate-400">
+                Ready — 4 images • Flip • 60 LPI • 300 DPI
+            </p>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-mono text-[11px] tracking-tight text-[#1a1a2e] font-bold">42 MB</span>
+</div>
+</footer>
+</body></html>
