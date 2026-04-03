@@ -23,7 +23,7 @@
     justify-content: space-between;
     height: 32px;
     padding: 0 16px;
-    background: var(--surface);
+    background: var(--bg);
     border-top: 1px solid var(--border);
     font-size: 12px;
     color: var(--text-muted);

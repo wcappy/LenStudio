@@ -133,8 +133,8 @@
   .modal {
     background: var(--bg);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: 0 20px 60px var(--shadow);
+    border-radius: 14px;
+    box-shadow: 0 24px 48px -12px var(--shadow);
     width: 480px;
     max-width: 100%;
     max-height: 85vh;
@@ -147,17 +147,17 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 20px;
+    padding: 20px 24px;
     border-bottom: 1px solid var(--border);
   }
 
   .modal-header h2 {
     font-size: 16px;
-    font-weight: 700;
+    font-weight: 600;
   }
 
   .modal-body {
-    padding: 16px 20px;
+    padding: 20px 24px;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -221,7 +221,7 @@
 
   .format-option.active {
     border-color: var(--accent);
-    background: rgba(233, 69, 96, 0.05);
+    background: var(--accent-subtle);
   }
 
   .format-top {
@@ -242,7 +242,7 @@
     font-size: 10px;
     font-weight: 600;
     color: var(--accent);
-    background: rgba(233, 69, 96, 0.1);
+    background: var(--accent-muted);
     padding: 2px 6px;
     border-radius: 4px;
   }

@@ -45,7 +45,7 @@
 
 <style>
   .border-section {
-    padding: 16px;
+    padding: 16px 20px;
     border-bottom: 1px solid var(--border);
   }
 

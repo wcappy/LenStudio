@@ -1,10 +1,9 @@
 <script lang="ts">
   import { projectState } from '../../lib/stores/project.svelte.js';
   import { layoutStore } from '../../lib/stores/layout.svelte.js';
-  import NewProjectModal from './NewProjectModal.svelte';
   import ExportModal from '../export/ExportModal.svelte';
 
-  let showNewProject = $state(false);
+  let { showNewProject = $bindable(false) }: { showNewProject: boolean } = $props();
   let showExport = $state(false);
 
   const themeIcons: Record<string, string> = {
@@ -37,6 +36,7 @@
         document.documentElement.setAttribute('data-theme', projectState.resolvedTheme);
       }}
       title="Theme: {projectState.themeMode}"
+      aria-label="Toggle theme, current: {projectState.themeMode}"
     >
       {themeIcons[projectState.themeMode]}
     </button>
@@ -54,7 +54,6 @@
   </div>
 </header>
 
-<NewProjectModal bind:open={showNewProject} />
 <ExportModal bind:open={showExport} />
 
 <style>
@@ -77,7 +76,7 @@
   }
 
   .logo {
-    color: var(--accent);
+    color: var(--text);
   }
 
   .title {
@@ -89,7 +88,7 @@
   .header-right {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
   }
 
   .new-btn {

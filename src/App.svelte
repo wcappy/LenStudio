@@ -1,7 +1,6 @@
 <script lang="ts">
   import { projectState } from './lib/stores/project.svelte.js';
   import Header from './components/layout/Header.svelte';
-  import Sidebar from './components/layout/Sidebar.svelte';
   import MainArea from './components/layout/MainArea.svelte';
   import StatusBar from './components/layout/StatusBar.svelte';
   import MobileImageStrip from './components/layout/MobileImageStrip.svelte';
@@ -14,6 +13,9 @@
   import BorderSettings from './components/settings/BorderSettings.svelte';
   import EffectSettings from './components/settings/EffectSettings.svelte';
   import PreviewCanvas from './components/preview/PreviewCanvas.svelte';
+  import NewProjectModal from './components/layout/NewProjectModal.svelte';
+
+  let showNewProject = $state(false);
 
   // Listen for system theme changes
   $effect(() => {
@@ -43,25 +45,37 @@
 
 <svelte:window ondrop={handleGlobalDrop} ondragover={handleGlobalDragOver} />
 
-<Header />
+<Header bind:showNewProject />
 
-<div class="workspace">
-  <!-- Desktop sidebar -->
-  <Sidebar>
-    <LayoutPicker />
-    <SectionSelector />
-    <ImageList />
-    <EffectPicker />
-    <PrintSettings />
-    <BorderSettings />
-    <EffectSettings />
-  </Sidebar>
+{#if showNewProject}
+  <div class="workspace">
+    <div class="new-project-inline">
+      <NewProjectModal open={true} onclose={() => showNewProject = false} inline />
+    </div>
+  </div>
+{:else}
+  <div class="workspace">
+    <!-- Left panel: Structure -->
+    <aside class="panel panel-left">
+      <LayoutPicker />
+      <SectionSelector />
+    </aside>
 
-  <!-- Main preview area -->
-  <MainArea>
-    <PreviewCanvas />
-  </MainArea>
-</div>
+    <!-- Main preview area -->
+    <MainArea>
+      <PreviewCanvas />
+    </MainArea>
+
+    <!-- Right panel: Properties -->
+    <aside class="panel panel-right">
+      <ImageList />
+      <EffectPicker />
+      <EffectSettings />
+      <PrintSettings />
+      <BorderSettings />
+    </aside>
+  </div>
+{/if}
 
 <!-- Mobile: image strip + tabbed controls (hidden on desktop) -->
 <MobileImageStrip />
@@ -76,12 +90,40 @@
     overflow: hidden;
   }
 
+  .new-project-inline {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow-y: auto;
+  }
+
+  .panel {
+    background: var(--surface);
+    border-color: var(--border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  .panel-left {
+    width: 220px;
+    border-right: 1px solid var(--border);
+  }
+
+  .panel-right {
+    width: 260px;
+    border-left: 1px solid var(--border);
+  }
+
   @media (max-width: 768px) {
     .workspace {
       flex-direction: column;
     }
 
-    .workspace :global(.sidebar) {
+    .panel {
       display: none;
     }
 

@@ -1,4 +1,5 @@
 import type { EffectType } from './settings.js';
+import type { EffectParams } from './effects.js';
 import type { ImageFrame } from './image.js';
 
 // --- Layout tree types ---
@@ -10,6 +11,7 @@ export interface LayoutLeaf {
   type: 'leaf';
   id: string;
   effectType: EffectType;
+  effectParams?: EffectParams;
   frames: ImageFrame[];
 }
 

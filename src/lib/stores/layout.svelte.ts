@@ -1,5 +1,6 @@
 import type {
-  LayoutPreset, LayoutLeaf, LayoutNode, SplitDirection, ImageFrame, ImageTransform, EffectType
+  LayoutPreset, LayoutLeaf, LayoutNode, SplitDirection, ImageFrame, ImageTransform, EffectType,
+  EffectParams
 } from '../types/index.js';
 import { LAYOUT_PRESETS } from '../types/index.js';
 import {
@@ -10,6 +11,25 @@ import {
 
 const MAX_FRAMES_PER_SECTION = 12;
 const MIN_FRAMES_PER_SECTION = 2;
+
+function defaultParamsForEffect(effectType: EffectType): EffectParams {
+  switch (effectType) {
+    case 'flip': return { type: 'flip' };
+    case 'animation': return { type: 'animation', fps: 12 };
+    case 'depth3d': return { type: 'depth3d', maxDisplacement: 15, depthMapFrameId: null };
+    case 'zoom': return { type: 'zoom', zoomFactor: 2, centerX: 0.5, centerY: 0.5 };
+    case 'morph': return { type: 'morph', controlPoints: [], gridSize: 8 };
+  }
+}
+
+function minFramesForEffect(effectType: EffectType): number {
+  switch (effectType) {
+    case 'zoom': return 1;
+    case 'depth3d': return 2;
+    case 'morph': return 2;
+    default: return 2;
+  }
+}
 
 class LayoutStore {
   preset = $state<LayoutPreset>(LAYOUT_PRESETS[0]);
@@ -29,7 +49,7 @@ class LayoutStore {
   });
 
   isAllReady = $derived(
-    this.sections.length > 0 && this.sections.every(s => s.frames.length >= MIN_FRAMES_PER_SECTION)
+    this.sections.length > 0 && this.sections.every(s => s.frames.length >= minFramesForEffect(s.effectType))
   );
 
   canRemoveSelected = $derived(
@@ -192,12 +212,20 @@ class LayoutStore {
     this.root = updateLeaf(this.root, sectionId, leaf => ({
       ...leaf,
       effectType,
+      effectParams: defaultParamsForEffect(effectType),
+    }));
+  }
+
+  setSectionEffectParams(sectionId: string, params: EffectParams) {
+    this.root = updateLeaf(this.root, sectionId, leaf => ({
+      ...leaf,
+      effectParams: params,
     }));
   }
 
   isSectionReady(sectionId: string): boolean {
     const section = findLeaf(this.root, sectionId);
-    return !!section && section.frames.length >= MIN_FRAMES_PER_SECTION;
+    return !!section && section.frames.length >= minFramesForEffect(section.effectType);
   }
 
   canAddFrames(sectionId: string): boolean {

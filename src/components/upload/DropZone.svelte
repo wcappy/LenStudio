@@ -79,7 +79,7 @@
   .dropzone {
     border: 2px dashed var(--border);
     border-radius: 8px;
-    padding: 32px 16px;
+    padding: 40px 20px;
     text-align: center;
     cursor: pointer;
     transition: border-color 0.15s, background 0.15s;
@@ -87,7 +87,7 @@
 
   .dropzone:hover, .dropzone.dragging {
     border-color: var(--accent);
-    background: rgba(233, 69, 96, 0.05);
+    background: var(--accent-subtle);
   }
 
   .dropzone-content {

@@ -22,8 +22,10 @@
   let lastPinchDist: number | null = null;
 
   let canvasCursor = $state('default');
+  let dragTarget = $state<string | null>(null);
 
   const hasSplits = $derived(layoutStore.sectionCount > 1);
+  const hasAnyImages = $derived(layoutStore.sections.some(s => s.frames.length > 0));
 
   // Current frame for image mode
   const currentFrame = $derived.by(() => {
@@ -84,6 +86,45 @@
       renderer.setBorder(projectState.border);
       renderer.render(viewAngle);
     }
+  });
+
+  // Debounced effect processing for non-identity effects
+  let processTimer: ReturnType<typeof setTimeout> | null = null;
+
+  $effect(() => {
+    if (!renderer) return;
+
+    // Track dependencies: sections' effectType, effectParams, and frames
+    const deps = layoutStore.sections.map(s => ({
+      id: s.id,
+      effectType: s.effectType,
+      effectParams: s.effectParams,
+      frameCount: s.frames.length,
+    }));
+
+    // Debounce to avoid processing on every slider drag
+    if (processTimer) clearTimeout(processTimer);
+    processTimer = setTimeout(() => {
+      const cells = renderer!.getCells();
+      for (const s of layoutStore.sections) {
+        if (s.frames.length === 0) continue;
+        // Only process non-identity effects
+        if (s.effectType === 'flip' || s.effectType === 'animation') {
+          renderer!.clearProcessedCache(s.id);
+          continue;
+        }
+        const rect = cells.get(s.id);
+        if (rect) {
+          renderer!.processSection(s, Math.floor(rect.w), Math.floor(rect.h)).then(() => {
+            renderer!.render(viewAngle);
+          });
+        }
+      }
+    }, 300);
+
+    return () => {
+      if (processTimer) clearTimeout(processTimer);
+    };
   });
 
   $effect(() => {
@@ -348,6 +389,58 @@
     lastPinchDist = null;
   }
 
+  // --- Drag & drop handlers ---
+  function handleCanvasDragOver(e: DragEvent) {
+    if (!e.dataTransfer?.types.includes('Files')) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+
+    const rect = canvas.getBoundingClientRect();
+    const cx = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const cy = (e.clientY - rect.top) * (canvas.height / rect.height);
+    const cellId = hitTestCell(cx, cy);
+
+    if (cellId !== dragTarget) {
+      dragTarget = cellId;
+      if (renderer) {
+        renderer.setDragTarget(cellId);
+        renderer.render(viewAngle);
+      }
+    }
+  }
+
+  function handleCanvasDragLeave(e: DragEvent) {
+    // Only clear if leaving the canvas entirely
+    if (e.relatedTarget && canvas.contains(e.relatedTarget as Node)) return;
+    dragTarget = null;
+    if (renderer) {
+      renderer.setDragTarget(null);
+      renderer.render(viewAngle);
+    }
+  }
+
+  function handleCanvasDrop(e: DragEvent) {
+    e.preventDefault();
+    const files = e.dataTransfer?.files;
+    if (!files?.length) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const cx = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const cy = (e.clientY - rect.top) * (canvas.height / rect.height);
+    const cellId = hitTestCell(cx, cy);
+
+    if (cellId) {
+      layoutStore.selectSection(cellId);
+      layoutStore.addFrames(cellId, files);
+    }
+
+    dragTarget = null;
+    if (renderer) {
+      renderer.setDragTarget(null);
+      renderer.render(viewAngle);
+    }
+  }
+
   function handleScrub(e: Event) {
     viewAngle = parseFloat((e.target as HTMLInputElement).value);
     renderer?.render(viewAngle);
@@ -375,6 +468,34 @@
 <svelte:window onresize={handleResize} onmouseup={handleMouseUp} />
 
 <div class="preview-wrapper" class:fullscreen={isFullscreen} bind:this={wrapper}>
+  <div class="workspace-toolbar">
+    <button
+      class="workspace-btn"
+      class:active={layoutStore.layoutMode}
+      onclick={() => layoutStore.toggleLayoutMode()}
+    >
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="1" y="1" width="14" height="14" rx="1" />
+        <line x1="1" y1="8" x2="15" y2="8" />
+        <line x1="8" y1="1" x2="8" y2="15" />
+      </svg>
+      {layoutStore.layoutMode ? 'Editing Layout' : 'Edit Layout'}
+    </button>
+    <button
+      class="workspace-btn image"
+      class:active={layoutStore.imageMode}
+      onclick={() => layoutStore.toggleImageMode()}
+    >
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="1" y="1" width="14" height="14" rx="1" />
+        <polyline points="1 11 5 7 9 11" />
+        <polyline points="8 9 11 6 15 10" />
+        <circle cx="11" cy="4" r="1.5" />
+      </svg>
+      {layoutStore.imageMode ? 'Adjusting Images' : 'Adjust Images'}
+    </button>
+  </div>
+
   <div class="preview-container" bind:this={container}>
     <canvas
       bind:this={canvas}
@@ -391,7 +512,17 @@
       ontouchstart={handleTouchStart}
       ontouchmove={handleTouchMove}
       ontouchend={handleTouchEnd}
+      ondragover={handleCanvasDragOver}
+      ondragleave={handleCanvasDragLeave}
+      ondrop={handleCanvasDrop}
     ></canvas>
+    {#if !hasAnyImages}
+      <div class="canvas-empty-hint">
+        <p>Upload images to get started</p>
+        <p class="canvas-empty-sub desktop-hint">Add 2-12 images per section from the sidebar</p>
+        <p class="canvas-empty-sub mobile-hint">Tap "Upload Images" below to add photos</p>
+      </div>
+    {/if}
   </div>
 
   {#if layoutStore.layoutMode}
@@ -480,6 +611,7 @@
         class:active={showOverlay}
         onclick={() => (showOverlay = !showOverlay)}
         title={showOverlay ? 'Hide lens overlay' : 'Show lens overlay'}
+        aria-label={showOverlay ? 'Hide lens overlay' : 'Show lens overlay'}
       >
         <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5">
           {#if showOverlay}
@@ -498,12 +630,13 @@
         class:active={showHolo}
         onclick={() => (showHolo = !showHolo)}
         title={showHolo ? 'Hide holographic overlay' : 'Show holographic overlay'}
+        aria-label={showHolo ? 'Hide holographic overlay' : 'Show holographic overlay'}
       >
         <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke-width="1.5">
           <defs>
             <linearGradient id="holo-grad" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stop-color="#ff6b6b" />
-              <stop offset="33%" stop-color="#51cf66" />
+              <stop offset="33%" stop-color="var(--success)" />
               <stop offset="66%" stop-color="#339af0" />
               <stop offset="100%" stop-color="#cc5de8" />
             </linearGradient>
@@ -520,6 +653,7 @@
         class="btn-icon fullscreen-toggle"
         onclick={toggleFullscreen}
         title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+        aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
       >
         <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5">
           {#if isFullscreen}
@@ -545,9 +679,50 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 16px;
+    padding: 20px;
     gap: 8px;
     overflow: hidden;
+  }
+
+  .workspace-toolbar {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .workspace-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 6px;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+
+  .workspace-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .workspace-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .workspace-btn.image:hover {
+    border-color: var(--success);
+    color: var(--success);
+  }
+
+  .workspace-btn.image.active {
+    background: var(--success);
+    border-color: var(--success);
+    color: #fff;
   }
 
   .preview-wrapper.fullscreen {
@@ -565,9 +740,43 @@
     position: relative;
   }
 
+  .canvas-empty-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+    color: var(--text-muted);
+  }
+
+  .canvas-empty-hint p {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+
+  .canvas-empty-sub {
+    font-size: 12px;
+    opacity: 0.7;
+  }
+
+  .mobile-hint {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    .desktop-hint {
+      display: none;
+    }
+    .mobile-hint {
+      display: block;
+    }
+  }
+
   .preview-canvas {
-    border: 1px solid var(--secondary);
-    border-radius: 4px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
     max-width: 100%;
     max-height: 100%;
     touch-action: none;
@@ -579,8 +788,8 @@
   }
 
   .preview-canvas.image-mode {
-    border-color: #51cf66;
-    box-shadow: 0 0 0 1px #51cf66;
+    border-color: var(--success);
+    box-shadow: 0 0 0 1px var(--success);
   }
 
   /* --- Mode toolbars --- */
@@ -598,7 +807,7 @@
   }
 
   .mode-toolbar.image {
-    border-color: #51cf66;
+    border-color: var(--success);
   }
 
   .toolbar-info {
@@ -632,7 +841,7 @@
   }
 
   .toolbar-btn.danger:hover:not(:disabled) {
-    background: rgba(233, 69, 96, 0.12);
+    background: var(--danger-muted);
     color: var(--accent);
   }
 
@@ -642,7 +851,7 @@
   }
 
   .mode-toolbar.image .toolbar-btn.done {
-    background: #51cf66;
+    background: var(--success);
   }
 
   .toolbar-btn.done:hover {
@@ -660,7 +869,7 @@
     gap: 12px;
     padding: 8px 16px;
     background: var(--surface);
-    border-radius: 8px;
+    border-radius: 10px;
     width: 100%;
     max-width: 600px;
   }

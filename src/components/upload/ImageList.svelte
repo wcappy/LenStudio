@@ -30,7 +30,7 @@
 
 <style>
   .image-section {
-    padding: 16px;
+    padding: 16px 20px;
     border-bottom: 1px solid var(--border);
   }
 
@@ -45,7 +45,7 @@
     font-size: 11px;
     font-weight: 600;
     color: var(--accent);
-    background: rgba(233, 69, 96, 0.1);
+    background: var(--accent-muted);
     padding: 2px 8px;
     border-radius: 10px;
   }

@@ -48,7 +48,7 @@
 
 <style>
   .section-selector {
-    padding: 16px;
+    padding: 16px 20px;
     border-bottom: 1px solid var(--border);
   }
 
@@ -107,11 +107,12 @@
     right: 1px;
     background: rgba(0, 0, 0, 0.7);
     color: #fff;
-    font-size: 8px;
+    font-size: 9px;
     font-weight: 600;
-    padding: 0 3px;
+    padding: 1px 3px;
     border-radius: 2px;
     z-index: 1;
+    line-height: 1.2;
   }
 
   .cell-empty {
@@ -123,14 +124,15 @@
     position: absolute;
     bottom: 1px;
     left: 1px;
-    font-size: 7px;
+    font-size: 9px;
     font-weight: 600;
     text-transform: uppercase;
-    color: var(--text-muted);
-    background: rgba(0, 0, 0, 0.5);
-    padding: 0 2px;
+    color: #ccc;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 1px 3px;
     border-radius: 2px;
     z-index: 1;
+    line-height: 1.2;
   }
 
   .cell.selected .cell-effect {

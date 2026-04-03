@@ -1,5 +1,7 @@
 import type { ImageFrame, ImageTransform, BorderConfig, LayoutLeaf, LayoutNode, CellRect, DividerInfo } from '../types/index.js';
 import { computeTreeLayout } from '../utils/layout-tree.js';
+import { normalizeFrames } from '../engine/image-utils.js';
+import { applyEffect } from '../engine/effects/apply-effect.js';
 
 export class PreviewRenderer {
   private canvas: HTMLCanvasElement;
@@ -19,11 +21,16 @@ export class PreviewRenderer {
   private layoutMode = false;
   private imageMode = false;
   private hoveredDivider: string | null = null; // splitId
+  private dragTargetId: string | null = null;
 
   // Cached geometry from last render
   private lastCells: Map<string, CellRect> = new Map();
   private lastDividers: DividerInfo[] = [];
   private lastSplitRects: Map<string, CellRect> = new Map();
+
+  // Cached effect-processed bitmaps per section
+  private processedCache: Map<string, ImageBitmap[]> = new Map();
+  private processingIds: Set<string> = new Set();
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -74,16 +81,20 @@ export class PreviewRenderer {
     this.holoEnabled = enabled;
   }
 
+  setDragTarget(cellId: string | null) {
+    this.dragTargetId = cellId;
+  }
+
   render(viewAngle: number) {
     const { ctx, canvas } = this;
     const w = canvas.width;
     const h = canvas.height;
 
-    ctx.fillStyle = '#1a1a2e';
+    ctx.fillStyle = '#111113';
     ctx.fillRect(0, 0, w, h);
 
     if (this.sections.length === 0) {
-      ctx.fillStyle = '#8892a4';
+      ctx.fillStyle = '#71717a';
       ctx.font = '14px Inter, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('Upload images to preview', w / 2, h / 2);
@@ -113,15 +124,15 @@ export class PreviewRenderer {
       ctx.clip();
 
       if (section.frames.length === 0) {
-        ctx.fillStyle = '#1a1a2e';
+        ctx.fillStyle = '#111113';
         ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-        ctx.fillStyle = '#8892a4';
+        ctx.fillStyle = '#71717a';
         ctx.font = '12px Inter, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('+', rect.x + rect.w / 2, rect.y + rect.h / 2);
       } else {
-        this.renderSectionFrames(section.frames, viewAngle, rect.x, rect.y, rect.w, rect.h);
+        this.renderSectionFrames(section.frames, viewAngle, rect.x, rect.y, rect.w, rect.h, section.id);
       }
 
       ctx.restore();
@@ -137,9 +148,31 @@ export class PreviewRenderer {
       const selRect = cells.get(this.selectedSectionId);
       if (selRect) {
         ctx.save();
-        ctx.strokeStyle = '#e94560';
+        ctx.strokeStyle = '#6366f1';
         ctx.lineWidth = 2;
         ctx.strokeRect(selRect.x + 1, selRect.y + 1, selRect.w - 2, selRect.h - 2);
+        ctx.restore();
+      }
+    }
+
+    // Drag target highlight
+    if (this.dragTargetId) {
+      const dragRect = cells.get(this.dragTargetId);
+      if (dragRect) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(99, 102, 241, 0.15)';
+        ctx.fillRect(dragRect.x, dragRect.y, dragRect.w, dragRect.h);
+        ctx.strokeStyle = '#6366f1';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]);
+        ctx.strokeRect(dragRect.x + 1, dragRect.y + 1, dragRect.w - 2, dragRect.h - 2);
+        ctx.setLineDash([]);
+        // Drop hint text
+        ctx.fillStyle = '#6366f1';
+        ctx.font = '13px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Drop images here', dragRect.x + dragRect.w / 2, dragRect.y + dragRect.h / 2);
         ctx.restore();
       }
     }
@@ -158,11 +191,74 @@ export class PreviewRenderer {
     }
   }
 
+  /** Pre-process effect frames for a section and cache as ImageBitmaps */
+  async processSection(section: LayoutLeaf, targetW: number, targetH: number): Promise<void> {
+    if (this.processingIds.has(section.id)) return;
+    this.processingIds.add(section.id);
+
+    try {
+      const normalized = normalizeFrames(section.frames, targetW, targetH);
+      const processed = applyEffect(normalized, section.effectType, section.effectParams);
+
+      const bitmaps = await Promise.all(
+        processed.map(imgData => {
+          const c = new OffscreenCanvas(imgData.width, imgData.height);
+          const ctx2 = c.getContext('2d')!;
+          ctx2.putImageData(imgData, 0, 0);
+          return createImageBitmap(c);
+        })
+      );
+
+      // Clean up old bitmaps
+      this.processedCache.get(section.id)?.forEach(b => b.close());
+      this.processedCache.set(section.id, bitmaps);
+    } finally {
+      this.processingIds.delete(section.id);
+    }
+  }
+
+  clearProcessedCache(sectionId?: string) {
+    if (sectionId) {
+      this.processedCache.get(sectionId)?.forEach(b => b.close());
+      this.processedCache.delete(sectionId);
+    } else {
+      for (const bitmaps of this.processedCache.values()) {
+        bitmaps.forEach(b => b.close());
+      }
+      this.processedCache.clear();
+    }
+  }
+
   private renderSectionFrames(
     frames: ImageFrame[], viewAngle: number,
-    x: number, y: number, w: number, h: number
+    x: number, y: number, w: number, h: number,
+    sectionId?: string
   ) {
     const { ctx } = this;
+
+    // Use cached processed bitmaps if available (for non-identity effects)
+    const cached = sectionId ? this.processedCache.get(sectionId) : undefined;
+    if (cached && cached.length > 0) {
+      const n = cached.length;
+      const pos = viewAngle * (n - 1);
+      const idx = Math.floor(pos);
+      const blend = pos - idx;
+
+      const bmpA = cached[Math.min(idx, n - 1)];
+      const bmpB = cached[Math.min(idx + 1, n - 1)];
+
+      ctx.globalAlpha = 1;
+      ctx.drawImage(bmpA, x, y, w, h);
+
+      if (blend > 0.01 && bmpB !== bmpA) {
+        ctx.globalAlpha = blend;
+        ctx.drawImage(bmpB, x, y, w, h);
+        ctx.globalAlpha = 1;
+      }
+      return;
+    }
+
+    // Fallback: raw frame blending (for flip/animation or before processing completes)
     const n = frames.length;
     const pos = viewAngle * (n - 1);
     const idx = Math.floor(pos);
@@ -269,26 +365,26 @@ export class PreviewRenderer {
       if (d.direction === 'vertical') {
         const cx = d.x + d.w / 2;
         // Highlight zone
-        ctx.fillStyle = isHovered ? 'rgba(233, 69, 96, 0.3)' : 'rgba(255, 255, 255, 0.08)';
+        ctx.fillStyle = isHovered ? 'rgba(99, 102, 241, 0.3)' : 'rgba(255, 255, 255, 0.08)';
         const zoneW = Math.max(d.w, 8);
         ctx.fillRect(cx - zoneW / 2, d.y, zoneW, d.h);
 
         // Grab handle pill
         const handleH = Math.min(32, d.h * 0.4);
         const handleW = 6;
-        ctx.fillStyle = isHovered ? '#e94560' : 'rgba(255, 255, 255, 0.5)';
+        ctx.fillStyle = isHovered ? '#6366f1' : 'rgba(255, 255, 255, 0.5)';
         ctx.beginPath();
         ctx.roundRect(cx - handleW / 2, d.y + d.h / 2 - handleH / 2, handleW, handleH, 3);
         ctx.fill();
       } else {
         const cy = d.y + d.h / 2;
-        ctx.fillStyle = isHovered ? 'rgba(233, 69, 96, 0.3)' : 'rgba(255, 255, 255, 0.08)';
+        ctx.fillStyle = isHovered ? 'rgba(99, 102, 241, 0.3)' : 'rgba(255, 255, 255, 0.08)';
         const zoneH = Math.max(d.h, 8);
         ctx.fillRect(d.x, cy - zoneH / 2, d.w, zoneH);
 
         const handleW = Math.min(32, d.w * 0.4);
         const handleH = 6;
-        ctx.fillStyle = isHovered ? '#e94560' : 'rgba(255, 255, 255, 0.5)';
+        ctx.fillStyle = isHovered ? '#6366f1' : 'rgba(255, 255, 255, 0.5)';
         ctx.beginPath();
         ctx.roundRect(d.x + d.w / 2 - handleW / 2, cy - handleH / 2, handleW, handleH, 3);
         ctx.fill();
@@ -408,6 +504,7 @@ export class PreviewRenderer {
   }
 
   destroy() {
+    this.clearProcessedCache();
     this.sections = [];
   }
 }

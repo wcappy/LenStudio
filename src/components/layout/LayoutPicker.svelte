@@ -59,36 +59,7 @@
 </script>
 
 <section class="layout-section">
-  <div class="section-header">
-    <span class="section-label">Layout</span>
-    <div class="mode-buttons">
-      <button
-        class="edit-layout-btn"
-        class:active={layoutStore.layoutMode}
-        onclick={() => layoutStore.toggleLayoutMode()}
-      >
-        <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5">
-          <rect x="1" y="1" width="14" height="14" rx="1" />
-          <line x1="1" y1="8" x2="15" y2="8" />
-          <line x1="8" y1="1" x2="8" y2="15" />
-        </svg>
-        {layoutStore.layoutMode ? 'Editing' : 'Edit Layout'}
-      </button>
-      <button
-        class="edit-layout-btn image-btn"
-        class:active={layoutStore.imageMode}
-        onclick={() => layoutStore.toggleImageMode()}
-      >
-        <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5">
-          <rect x="1" y="1" width="14" height="14" rx="1" />
-          <polyline points="1 11 5 7 9 11" />
-          <polyline points="8 9 11 6 15 10" />
-          <circle cx="11" cy="4" r="1.5" />
-        </svg>
-        {layoutStore.imageMode ? 'Adjusting' : 'Adjust Images'}
-      </button>
-    </div>
-  </div>
+  <span class="section-label">Layout</span>
 
   <div class="preset-grid">
     {#each LAYOUT_PRESETS as preset}
@@ -184,73 +155,8 @@
 
 <style>
   .layout-section {
-    padding: 16px;
+    padding: 16px 20px;
     border-bottom: 1px solid var(--border);
-  }
-
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 2px;
-  }
-
-  .mode-buttons {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-
-  @media (max-width: 768px) {
-    .section-header {
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .mode-buttons {
-      width: 100%;
-    }
-
-    .edit-layout-btn {
-      flex: 1;
-      justify-content: center;
-    }
-  }
-
-  .edit-layout-btn {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 10px;
-    font-size: 11px;
-    font-weight: 600;
-    border-radius: 5px;
-    color: var(--text-muted);
-    border: 1px solid var(--border);
-    transition: all 0.15s;
-  }
-
-  .edit-layout-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  .edit-layout-btn.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-  }
-
-  .image-btn:hover {
-    border-color: #51cf66;
-    color: #51cf66;
-  }
-
-  .image-btn.active {
-    background: #51cf66;
-    border-color: #51cf66;
-    color: #fff;
   }
 
   .preset-grid {
@@ -275,7 +181,7 @@
   }
 
   .preset-btn.active {
-    background: rgba(233, 69, 96, 0.1);
+    background: var(--accent-muted);
     color: var(--accent);
   }
 
@@ -325,8 +231,8 @@
   .warning {
     margin-top: 10px;
     padding: 10px 12px;
-    background: rgba(233, 69, 96, 0.08);
-    border: 1px solid rgba(233, 69, 96, 0.25);
+    background: var(--danger-muted);
+    border: 1px solid var(--danger);
     border-radius: 8px;
   }
 

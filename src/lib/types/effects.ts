@@ -24,7 +24,7 @@ export interface AnimationParams {
 export interface Depth3dParams {
   type: 'depth3d';
   maxDisplacement: number;
-  depthMap: ImageData | null;
+  depthMapFrameId: string | null;
 }
 
 export interface ZoomParams {

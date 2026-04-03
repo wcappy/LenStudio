@@ -2,10 +2,15 @@
   import { projectState, inchesToUnit, unitToInches, unitLabel, unitStep, unitMax } from '../../lib/stores/project.svelte.js';
   import type { MeasurementUnit } from '../../lib/stores/project.svelte.js';
   import { layoutStore } from '../../lib/stores/layout.svelte.js';
-  import type { LPI, DPI } from '../../lib/types/index.js';
-  import { LPI_OPTIONS, DPI_OPTIONS } from '../../lib/types/index.js';
+  import type { LPI, DPI, LayoutPreset } from '../../lib/types/index.js';
+  import { LPI_OPTIONS, DPI_OPTIONS, LAYOUT_PRESETS } from '../../lib/types/index.js';
 
-  let { open = $bindable(false) }: { open: boolean } = $props();
+  let { open = $bindable(false), inline = false, onclose }: { open: boolean; inline?: boolean; onclose?: () => void } = $props();
+
+  function close() {
+    open = false;
+    onclose?.();
+  }
 
   interface SizePreset {
     label: string;
@@ -51,6 +56,10 @@
   let selectedLpi = $state(projectState.lpi);
   let selectedDpi = $state(projectState.dpi);
   let orientation = $state<'portrait' | 'landscape'>('portrait');
+  let selectedLayout = $state<LayoutPreset>(LAYOUT_PRESETS[0]);
+  let isCustomLayout = $state(false);
+  let customLayoutCols = $state(2);
+  let customLayoutRows = $state(2);
 
   // Display-unit values for the dimension inputs
   let displayW = $state(inchesToUnit(projectState.outputWidthInches, projectState.unit));
@@ -101,16 +110,20 @@
     projectState.outputHeightInches = unitToInches(displayH, projectState.unit);
     projectState.lpi = selectedLpi;
     projectState.dpi = selectedDpi;
-    layoutStore.clearAll();
-    open = false;
+    if (isCustomLayout) {
+      layoutStore.setCustomGrid(customLayoutCols, customLayoutRows);
+    } else {
+      layoutStore.setPreset(selectedLayout);
+    }
+    close();
   }
 
   function handleBackdropClick(e: MouseEvent) {
-    if (e.target === e.currentTarget) open = false;
+    if (e.target === e.currentTarget) close();
   }
 
   function handleKeydown(e: KeyboardEvent) {
-    if (e.key === 'Escape') open = false;
+    if (e.key === 'Escape') close();
   }
 
   const widthInches = $derived(unitToInches(displayW, projectState.unit));
@@ -124,157 +137,169 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-{#if open}
-  <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus a11y_no_noninteractive_tabindex -->
-  <div class="modal-backdrop" onclick={handleBackdropClick} role="dialog" aria-modal="true" aria-label="New Project" tabindex="-1">
-    <div class="modal">
-      <div class="modal-header">
-        <h2>New Project</h2>
-        <button class="btn-icon" onclick={() => (open = false)} title="Close">&times;</button>
+{#snippet modalContent()}
+  <div class="modal-header">
+    <h2>New Project</h2>
+    <button class="btn-icon" onclick={close} title="Close">&times;</button>
+  </div>
+
+  <div class="modal-body">
+    <div class="presets-panel">
+      <div class="orientation-toggle">
+        <button class="orient-btn" class:active={orientation === 'portrait'} onclick={() => { if (orientation !== 'portrait') toggleOrientation(); }}>
+          <svg viewBox="0 0 16 22" width="14" height="18"><rect x="1" y="1" width="14" height="20" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          Portrait
+        </button>
+        <button class="orient-btn" class:active={orientation === 'landscape'} onclick={() => { if (orientation !== 'landscape') toggleOrientation(); }}>
+          <svg viewBox="0 0 22 16" width="18" height="14"><rect x="1" y="1" width="20" height="14" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+          Landscape
+        </button>
       </div>
 
-      <div class="modal-body">
-        <!-- Size Presets -->
-        <div class="presets-panel">
-          <div class="orientation-toggle">
-            <button
-              class="orient-btn"
-              class:active={orientation === 'portrait'}
-              onclick={() => { if (orientation !== 'portrait') toggleOrientation(); }}
-            >
-              <svg viewBox="0 0 16 22" width="14" height="18"><rect x="1" y="1" width="14" height="20" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
-              Portrait
-            </button>
-            <button
-              class="orient-btn"
-              class:active={orientation === 'landscape'}
-              onclick={() => { if (orientation !== 'landscape') toggleOrientation(); }}
-            >
-              <svg viewBox="0 0 22 16" width="18" height="14"><rect x="1" y="1" width="20" height="14" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
-              Landscape
-            </button>
+      {#each categories as category}
+        <div class="preset-group">
+          <span class="group-label">{category}</span>
+          <div class="preset-grid">
+            {#each presets.filter(p => p.category === category) as preset}
+              <button class="preset-btn" class:active={selectedPreset === preset && !isCustom} onclick={() => selectPreset(preset)}>
+                <span class="preset-name">{preset.label}</span>
+                <span class="preset-dims">{formatPresetDims(preset)}</span>
+              </button>
+            {/each}
           </div>
+        </div>
+      {/each}
 
-          {#each categories as category}
-            <div class="preset-group">
-              <span class="group-label">{category}</span>
-              <div class="preset-grid">
-                {#each presets.filter(p => p.category === category) as preset}
-                  <button
-                    class="preset-btn"
-                    class:active={selectedPreset === preset && !isCustom}
-                    onclick={() => selectPreset(preset)}
-                  >
-                    <span class="preset-name">{preset.label}</span>
-                    <span class="preset-dims">{formatPresetDims(preset)}</span>
-                  </button>
-                {/each}
-              </div>
-            </div>
+      <div class="preset-group">
+        <span class="group-label">Custom</span>
+        <button class="preset-btn" class:active={isCustom} onclick={enableCustom}>
+          <span class="preset-name">Custom Size</span>
+          <span class="preset-dims">Enter dimensions</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="settings-panel">
+      <div class="size-inputs">
+        <div class="section-row">
+          <span class="section-label">Dimensions</span>
+          <div class="unit-toggle">
+            {#each units as u}
+              <button class="unit-btn" class:active={projectState.unit === u} onclick={() => {
+                const wIn = unitToInches(displayW, projectState.unit);
+                const hIn = unitToInches(displayH, projectState.unit);
+                projectState.setUnit(u);
+                displayW = inchesToUnit(wIn, u);
+                displayH = inchesToUnit(hIn, u);
+              }}>{u}</button>
+            {/each}
+          </div>
+        </div>
+        <div class="input-row">
+          <div class="field">
+            <label for="new-width">Width ({unitLabel(projectState.unit)})</label>
+            <input id="new-width" type="number" min="1" max={unitMax(projectState.unit)} step={unitStep(projectState.unit)} bind:value={displayW} onfocus={enableCustom} />
+          </div>
+          <span class="times">&times;</span>
+          <div class="field">
+            <label for="new-height">Height ({unitLabel(projectState.unit)})</label>
+            <input id="new-height" type="number" min="1" max={unitMax(projectState.unit)} step={unitStep(projectState.unit)} bind:value={displayH} onfocus={enableCustom} />
+          </div>
+        </div>
+      </div>
+
+      <div class="print-inputs">
+        <span class="section-label">Print Settings</span>
+        <div class="input-row">
+          <div class="field">
+            <label for="new-lpi">LPI</label>
+            <select id="new-lpi" bind:value={selectedLpi}>
+              {#each LPI_OPTIONS as lpi}<option value={lpi}>{lpi}</option>{/each}
+            </select>
+          </div>
+          <div class="field">
+            <label for="new-dpi">DPI</label>
+            <select id="new-dpi" bind:value={selectedDpi}>
+              {#each DPI_OPTIONS as dpi}<option value={dpi}>{dpi}</option>{/each}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="layout-inputs">
+        <span class="section-label">Layout</span>
+        <div class="layout-grid">
+          {#each LAYOUT_PRESETS as preset}
+            <button
+              class="layout-btn"
+              class:active={!isCustomLayout && selectedLayout.id === preset.id}
+              onclick={() => { selectedLayout = preset; isCustomLayout = false; }}
+              title={preset.label}
+            >
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="2" width="20" height="20" rx="1" />
+                {#if preset.cols > 1}
+                  {#each Array(preset.cols - 1) as _, c}
+                    <line x1={2 + ((c + 1) * 20) / preset.cols} y1="2" x2={2 + ((c + 1) * 20) / preset.cols} y2="22" />
+                  {/each}
+                {/if}
+                {#if preset.rows > 1}
+                  {#each Array(preset.rows - 1) as _, r}
+                    <line x1="2" y1={2 + ((r + 1) * 20) / preset.rows} x2="22" y2={2 + ((r + 1) * 20) / preset.rows} />
+                  {/each}
+                {/if}
+              </svg>
+              <span class="layout-label">{preset.label}</span>
+            </button>
           {/each}
-
-          <div class="preset-group">
-            <span class="group-label">Custom</span>
-            <button class="preset-btn" class:active={isCustom} onclick={enableCustom}>
-              <span class="preset-name">Custom Size</span>
-              <span class="preset-dims">Enter dimensions</span>
-            </button>
-          </div>
         </div>
-
-        <!-- Settings Panel -->
-        <div class="settings-panel">
-          <div class="size-inputs">
-            <div class="section-row">
-              <span class="section-label">Dimensions</span>
-              <div class="unit-toggle">
-                {#each units as u}
-                  <button
-                    class="unit-btn"
-                    class:active={projectState.unit === u}
-                    onclick={() => {
-                      // Convert current values to new unit
-                      const wIn = unitToInches(displayW, projectState.unit);
-                      const hIn = unitToInches(displayH, projectState.unit);
-                      projectState.setUnit(u);
-                      displayW = inchesToUnit(wIn, u);
-                      displayH = inchesToUnit(hIn, u);
-                    }}
-                  >
-                    {u}
-                  </button>
-                {/each}
-              </div>
-            </div>
-            <div class="input-row">
-              <div class="field">
-                <label for="new-width">Width ({unitLabel(projectState.unit)})</label>
-                <input
-                  id="new-width"
-                  type="number"
-                  min="1"
-                  max={unitMax(projectState.unit)}
-                  step={unitStep(projectState.unit)}
-                  bind:value={displayW}
-                  onfocus={enableCustom}
-                />
-              </div>
+        <div class="custom-layout-row">
+          <button
+            class="layout-custom-btn"
+            class:active={isCustomLayout}
+            onclick={() => isCustomLayout = true}
+          >Custom</button>
+          {#if isCustomLayout}
+            <div class="custom-layout-inputs">
+              <input type="number" min="1" max="6" bind:value={customLayoutCols} class="custom-layout-input" />
               <span class="times">&times;</span>
-              <div class="field">
-                <label for="new-height">Height ({unitLabel(projectState.unit)})</label>
-                <input
-                  id="new-height"
-                  type="number"
-                  min="1"
-                  max={unitMax(projectState.unit)}
-                  step={unitStep(projectState.unit)}
-                  bind:value={displayH}
-                  onfocus={enableCustom}
-                />
-              </div>
+              <input type="number" min="1" max="6" bind:value={customLayoutRows} class="custom-layout-input" />
             </div>
-          </div>
-
-          <div class="print-inputs">
-            <span class="section-label">Print Settings</span>
-            <div class="input-row">
-              <div class="field">
-                <label for="new-lpi">LPI</label>
-                <select id="new-lpi" bind:value={selectedLpi}>
-                  {#each LPI_OPTIONS as lpi}
-                    <option value={lpi}>{lpi}</option>
-                  {/each}
-                </select>
-              </div>
-              <div class="field">
-                <label for="new-dpi">DPI</label>
-                <select id="new-dpi" bind:value={selectedDpi}>
-                  {#each DPI_OPTIONS as dpi}
-                    <option value={dpi}>{dpi}</option>
-                  {/each}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div class="output-preview">
-            <div class="preview-box" style="aspect-ratio: {displayW} / {displayH};">
-              <span class="preview-label">{displayW} &times; {displayH} {unitLabel(projectState.unit)}</span>
-            </div>
-            <div class="output-info">
-              <p>{outputW} &times; {outputH} px</p>
-              <p>{strip} px/lenticule &bull; {Math.floor(outputW / strip)} lenticules</p>
-            </div>
-          </div>
+          {/if}
         </div>
       </div>
 
-      <div class="modal-footer">
-        <button class="btn-ghost" onclick={() => (open = false)}>Cancel</button>
-        <button class="btn-primary" onclick={handleCreate}>Create Project</button>
+      <div class="output-preview">
+        <div class="preview-box" style="aspect-ratio: {displayW} / {displayH};">
+          <span class="preview-label">{displayW} &times; {displayH} {unitLabel(projectState.unit)}</span>
+        </div>
+        <div class="output-info">
+          <p>{outputW} &times; {outputH} px</p>
+          <p>{strip} px/lenticule &bull; {Math.floor(outputW / strip)} lenticules</p>
+        </div>
       </div>
     </div>
   </div>
+
+  <div class="modal-footer">
+    <button class="btn-ghost" onclick={close}>Cancel</button>
+    <button class="btn-primary" onclick={handleCreate}>Create Project</button>
+  </div>
+{/snippet}
+
+{#if open}
+  {#if inline}
+    <div class="modal inline">
+      {@render modalContent()}
+    </div>
+  {:else}
+    <!-- svelte-ignore a11y_click_events_have_key_events a11y_interactive_supports_focus a11y_no_noninteractive_tabindex -->
+    <div class="modal-backdrop" onclick={handleBackdropClick} role="dialog" aria-modal="true" aria-label="New Project" tabindex="-1">
+      <div class="modal">
+        {@render modalContent()}
+      </div>
+    </div>
+  {/if}
 {/if}
 
 <style>
@@ -292,8 +317,8 @@
   .modal {
     background: var(--bg);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: 0 20px 60px var(--shadow);
+    border-radius: 14px;
+    box-shadow: 0 24px 48px -12px var(--shadow);
     width: 680px;
     max-width: 100%;
     max-height: 85vh;
@@ -302,17 +327,24 @@
     overflow: hidden;
   }
 
+  .modal.inline {
+    width: 100%;
+    max-width: 780px;
+    max-height: 100%;
+    border-radius: 12px;
+  }
+
   .modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 20px;
+    padding: 20px 24px;
     border-bottom: 1px solid var(--border);
   }
 
   .modal-header h2 {
     font-size: 16px;
-    font-weight: 700;
+    font-weight: 600;
   }
 
   .modal-body {
@@ -394,7 +426,7 @@
   }
 
   .preset-btn.active {
-    background: rgba(233, 69, 96, 0.1);
+    background: var(--accent-muted);
     color: var(--accent);
   }
 
@@ -476,6 +508,90 @@
     padding-bottom: 8px;
     color: var(--text-muted);
     font-size: 14px;
+  }
+
+  .layout-inputs {
+    margin-top: 0;
+  }
+
+  .layout-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+  }
+
+  .layout-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 2px;
+    border-radius: 6px;
+    transition: background 0.12s;
+  }
+
+  .layout-btn:hover {
+    background: var(--surface-hover);
+  }
+
+  .layout-btn.active {
+    background: var(--accent-muted);
+    color: var(--accent);
+  }
+
+  .layout-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .layout-btn.active .layout-label {
+    color: var(--accent);
+  }
+
+  .custom-layout-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .layout-custom-btn {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+
+  .layout-custom-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .layout-custom-btn.active {
+    background: var(--accent-muted);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .custom-layout-inputs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .custom-layout-input {
+    width: 48px;
+    text-align: center;
+    padding: 4px 6px;
+    font-size: 13px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
   }
 
   .output-preview {

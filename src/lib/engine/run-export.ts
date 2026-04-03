@@ -3,6 +3,7 @@ import { layoutStore } from '../stores/layout.svelte.js';
 import { computeTreeLayout } from '../utils/layout-tree.js';
 import { normalizeFrames } from './image-utils.js';
 import { interlaceFrames } from './interlace.js';
+import { applyEffect } from './effects/apply-effect.js';
 import { exportPng } from './export.js';
 import { exportTiff } from './export-tiff.js';
 import { exportBmp } from './export-bmp.js';
@@ -49,7 +50,7 @@ export const EXPORT_FORMATS: ExportFormatInfo[] = [
 
 export async function runExport(format: ExportFormat): Promise<void> {
   if (!layoutStore.isAllReady) {
-    alert('Each section needs at least 2 images before exporting.');
+    alert('Some sections need more images before exporting.');
     return;
   }
 
@@ -89,9 +90,7 @@ export async function runExport(format: ExportFormat): Promise<void> {
       const sectionH = Math.floor(rect.h);
 
       const normalized = normalizeFrames(section.frames, sectionW, sectionH);
-      const frameData = normalized
-        .sort((a, b) => a.order - b.order)
-        .map(f => f.imageData);
+      const frameData = applyEffect(normalized, section.effectType, section.effectParams);
 
       const interlaced = interlaceFrames(frameData, lpi, dpi, (pct) => {
         projectState.processProgress = baseProgress + Math.round((pct / totalSections) * 0.9);

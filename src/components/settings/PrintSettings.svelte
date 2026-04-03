@@ -88,14 +88,14 @@
 
 <style>
   .print-section {
-    padding: 16px;
+    padding: 16px 20px;
     border-bottom: 1px solid var(--border);
   }
 
   .settings-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 12px;
     margin-top: 4px;
   }
 
@@ -133,13 +133,14 @@
   }
 
   .unit-btn {
-    padding: 3px 10px;
+    padding: 6px 12px;
     border-radius: 4px;
     font-size: 11px;
     font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
     transition: background 0.12s, color 0.12s;
+    min-height: 32px;
   }
 
   .unit-btn.active {

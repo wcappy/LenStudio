@@ -63,7 +63,7 @@
   }
 
   .image-card:hover {
-    border-color: var(--accent);
+    border-color: var(--border-light);
   }
 
   .image-card.dragging {
@@ -113,6 +113,6 @@
   }
 
   .remove-btn:hover {
-    background: var(--accent);
+    background: var(--danger);
   }
 </style>

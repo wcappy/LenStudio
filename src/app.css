@@ -1,39 +1,49 @@
 /* ===== CSS Custom Properties — Dark/Light Theming ===== */
 
 :root {
-  --bg: #1a1a2e;
-  --surface: #16213e;
-  --surface-hover: #1c2a4a;
-  --accent: #e94560;
-  --accent-hover: #d63a54;
-  --secondary: #0f3460;
-  --tertiary: #533483;
-  --text: #ffffff;
-  --text-secondary: #c4c9d4;
-  --text-muted: #8892a4;
-  --border: #2a3555;
-  --border-light: #354268;
-  --shadow: rgba(0, 0, 0, 0.3);
-  --overlay: rgba(0, 0, 0, 0.6);
+  --bg: #111113;
+  --surface: #18181b;
+  --surface-hover: #222225;
+  --accent: #6366f1;
+  --accent-hover: #5558e6;
+  --accent-muted: rgba(99, 102, 241, 0.10);
+  --accent-subtle: rgba(99, 102, 241, 0.06);
+  --secondary: #1e1e22;
+  --tertiary: #27272a;
+  --text: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --border: #27272a;
+  --border-light: #3f3f46;
+  --shadow: rgba(0, 0, 0, 0.4);
+  --overlay: rgba(0, 0, 0, 0.65);
+  --danger: #ef4444;
+  --danger-muted: rgba(239, 68, 68, 0.10);
+  --success: #22c55e;
 
   color-scheme: dark;
 }
 
 :root[data-theme='light'] {
   --bg: #ffffff;
-  --surface: #f0f2f5;
-  --surface-hover: #e4e7ec;
-  --accent: #e94560;
-  --accent-hover: #d63a54;
-  --secondary: #e8edf4;
-  --tertiary: #ede0f5;
-  --text: #1a1a2e;
-  --text-secondary: #3d4455;
-  --text-muted: #5a6275;
-  --border: #e2e5ea;
-  --border-light: #d1d5dc;
-  --shadow: rgba(0, 0, 0, 0.08);
-  --overlay: rgba(0, 0, 0, 0.3);
+  --surface: #f4f4f5;
+  --surface-hover: #e4e4e7;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-muted: rgba(79, 70, 229, 0.08);
+  --accent-subtle: rgba(79, 70, 229, 0.04);
+  --secondary: #f4f4f5;
+  --tertiary: #e4e4e7;
+  --text: #09090b;
+  --text-secondary: #52525b;
+  --text-muted: #a1a1aa;
+  --border: #e4e4e7;
+  --border-light: #d4d4d8;
+  --shadow: rgba(0, 0, 0, 0.06);
+  --overlay: rgba(0, 0, 0, 0.35);
+  --danger: #dc2626;
+  --danger-muted: rgba(220, 38, 38, 0.08);
+  --success: #16a34a;
 
   color-scheme: light;
 }
@@ -53,8 +63,9 @@ html, body {
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
+  letter-spacing: -0.011em;
   color: var(--text);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
@@ -70,9 +81,10 @@ body {
 /* ===== Typography ===== */
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
-  font-weight: 700;
-  line-height: 1.2;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
 }
 
 /* ===== Scrollbar ===== */
@@ -87,7 +99,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: var(--border-light);
   border-radius: 3px;
 }
 
@@ -110,7 +122,7 @@ h1, h2, h3, h4, h5, h6 {
 
 :focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline-offset: 1px;
 }
 
 /* ===== Buttons ===== */
@@ -127,11 +139,12 @@ button {
 .btn-primary {
   background: var(--accent);
   color: #fff;
-  padding: 8px 20px;
-  border-radius: 999px;
-  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-weight: 500;
   font-size: 13px;
-  transition: background 0.15s;
+  transition: background 0.15s, box-shadow 0.15s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .btn-primary:hover {
@@ -141,16 +154,18 @@ button {
 .btn-ghost {
   background: transparent;
   border: 1px solid var(--border);
-  color: var(--text-muted);
-  padding: 6px 14px;
+  color: var(--text-secondary);
+  padding: 7px 14px;
   border-radius: 8px;
   font-size: 13px;
-  transition: border-color 0.15s, color 0.15s;
+  font-weight: 500;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
 
 .btn-ghost:hover {
-  border-color: var(--text-muted);
+  border-color: var(--border-light);
   color: var(--text);
+  background: var(--surface);
 }
 
 .btn-icon {
@@ -159,7 +174,7 @@ button {
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: 6px;
   color: var(--text-muted);
   transition: background 0.15s, color 0.15s;
 }
@@ -174,24 +189,25 @@ button {
 select, input[type="number"] {
   font-family: inherit;
   font-size: 13px;
-  background: var(--surface);
+  background: var(--bg);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 6px 10px;
+  border-radius: 8px;
+  padding: 7px 10px;
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 select:focus, input[type="number"]:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
 }
 
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 4px;
+  height: 3px;
   background: var(--border);
   border-radius: 2px;
   outline: none;
@@ -200,21 +216,42 @@ input[type="range"] {
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   background: var(--accent);
+  border: 2px solid var(--bg);
   border-radius: 50%;
   cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 /* ===== Section Labels ===== */
 
 .section-label {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   color: var(--text-muted);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+/* ===== Mobile Touch Targets ===== */
+
+@media (max-width: 768px) {
+  .btn-primary {
+    min-height: 44px;
+    padding: 10px 20px;
+  }
+
+  .btn-ghost {
+    min-height: 44px;
+    padding: 10px 14px;
+  }
+
+  .btn-icon {
+    width: 44px;
+    height: 44px;
+  }
 }
