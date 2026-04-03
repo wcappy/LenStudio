@@ -11,6 +11,15 @@
     light: '☀',
     dark: '☾',
   };
+
+  const exportDisabledReason = $derived.by(() => {
+    if (projectState.isProcessing) return 'Export in progress...';
+    if (layoutStore.sections.length === 0) return 'No sections to export';
+    const empty = layoutStore.sections.filter(s => s.frames.length === 0);
+    if (empty.length > 0) return `${empty.length} section${empty.length > 1 ? 's' : ''} need images`;
+    if (!layoutStore.isAllReady) return 'Some sections need more images';
+    return '';
+  });
 </script>
 
 <header class="header">
@@ -40,17 +49,23 @@
     >
       {themeIcons[projectState.themeMode]}
     </button>
-    <button
-      class="btn-primary"
-      onclick={() => (showExport = true)}
-      disabled={!layoutStore.isAllReady || projectState.isProcessing}
-    >
-      {#if projectState.isProcessing}
-        {projectState.processProgress}%
-      {:else}
-        Export
+    <div class="export-wrapper">
+      <button
+        class="btn-primary"
+        onclick={() => (showExport = true)}
+        disabled={!layoutStore.isAllReady || projectState.isProcessing}
+        title={exportDisabledReason || 'Export project'}
+      >
+        {#if projectState.isProcessing}
+          {projectState.processProgress}%
+        {:else}
+          Export
+        {/if}
+      </button>
+      {#if exportDisabledReason}
+        <span class="export-hint">{exportDisabledReason}</span>
       {/if}
-    </button>
+    </div>
   </div>
 </header>
 
@@ -98,6 +113,20 @@
 
   .theme-toggle {
     font-size: 16px;
+  }
+
+  .export-wrapper {
+    position: relative;
+  }
+
+  .export-hint {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--danger);
+    white-space: nowrap;
   }
 
   @media (max-width: 768px) {

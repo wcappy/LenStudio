@@ -5,7 +5,6 @@
   import StatusBar from './components/layout/StatusBar.svelte';
   import MobileImageStrip from './components/layout/MobileImageStrip.svelte';
   import MobileTabs from './components/layout/MobileTabs.svelte';
-  import LayoutPicker from './components/layout/LayoutPicker.svelte';
   import SectionSelector from './components/layout/SectionSelector.svelte';
   import ImageList from './components/upload/ImageList.svelte';
   import EffectPicker from './components/settings/EffectPicker.svelte';
@@ -55,10 +54,11 @@
   </div>
 {:else}
   <div class="workspace">
-    <!-- Left panel: Structure -->
+    <!-- Left panel: Structure + Images -->
     <aside class="panel panel-left">
-      <LayoutPicker />
       <SectionSelector />
+      <ImageList />
+      <PrintSettings />
     </aside>
 
     <!-- Main preview area -->
@@ -66,12 +66,10 @@
       <PreviewCanvas />
     </MainArea>
 
-    <!-- Right panel: Properties -->
+    <!-- Right panel: Effects -->
     <aside class="panel panel-right">
-      <ImageList />
       <EffectPicker />
       <EffectSettings />
-      <PrintSettings />
       <BorderSettings />
     </aside>
   </div>
@@ -109,12 +107,12 @@
   }
 
   .panel-left {
-    width: 220px;
+    width: 240px;
     border-right: 1px solid var(--border);
   }
 
   .panel-right {
-    width: 260px;
+    width: 240px;
     border-left: 1px solid var(--border);
   }
 

@@ -20,6 +20,10 @@ export function applyEffect(
   if (imageDataList.length === 0) return [];
 
   switch (effectType) {
+    case 'none':
+      // Static image — just use the first frame
+      return [imageDataList[0]];
+
     case 'flip':
       return processFlip(imageDataList);
 

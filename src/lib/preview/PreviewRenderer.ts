@@ -271,13 +271,36 @@ export class PreviewRenderer {
 
     const srcA = this.computeSourceRect(frameA.bitmap, w, h, frameA.transform);
     ctx.globalAlpha = 1;
-    ctx.drawImage(frameA.bitmap, srcA.sx, srcA.sy, srcA.sw, srcA.sh, x, y, w, h);
+    this.drawWithTransform(ctx, frameA.bitmap, srcA, x, y, w, h, frameA.transform);
 
     if (blend > 0.01 && frameB.bitmap && frameA.id !== frameB.id) {
       const srcB = this.computeSourceRect(frameB.bitmap, w, h, frameB.transform);
       ctx.globalAlpha = blend;
-      ctx.drawImage(frameB.bitmap, srcB.sx, srcB.sy, srcB.sw, srcB.sh, x, y, w, h);
+      this.drawWithTransform(ctx, frameB.bitmap, srcB, x, y, w, h, frameB.transform);
       ctx.globalAlpha = 1;
+    }
+  }
+
+  private drawWithTransform(
+    ctx: CanvasRenderingContext2D,
+    bitmap: ImageBitmap,
+    src: { sx: number; sy: number; sw: number; sh: number },
+    x: number, y: number, w: number, h: number,
+    transform?: ImageTransform
+  ) {
+    const flipH = transform?.flipH ?? false;
+    const flipV = transform?.flipV ?? false;
+    const rotation = transform?.rotation ?? 0;
+
+    if (flipH || flipV || rotation) {
+      ctx.save();
+      ctx.translate(x + w / 2, y + h / 2);
+      if (rotation) ctx.rotate((rotation * Math.PI) / 180);
+      ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+      ctx.drawImage(bitmap, src.sx, src.sy, src.sw, src.sh, -w / 2, -h / 2, w, h);
+      ctx.restore();
+    } else {
+      ctx.drawImage(bitmap, src.sx, src.sy, src.sw, src.sh, x, y, w, h);
     }
   }
 

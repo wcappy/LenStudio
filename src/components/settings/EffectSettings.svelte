@@ -85,7 +85,9 @@
       </div>
     {/if}
 
-    {#if section.effectType === 'flip'}
+    {#if section.effectType === 'none'}
+      <p class="effect-hint">Upload 1 image for a static print (no lenticular effect)</p>
+    {:else if section.effectType === 'flip'}
       <p class="effect-hint">Upload 2+ images to flip between on tilt</p>
     {/if}
   {/if}

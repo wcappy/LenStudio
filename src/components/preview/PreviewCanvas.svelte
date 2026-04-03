@@ -390,15 +390,32 @@
   }
 
   // --- Drag & drop handlers ---
+  function isSectionFull(cellId: string): boolean {
+    return !layoutStore.canAddFrames(cellId);
+  }
+
   function handleCanvasDragOver(e: DragEvent) {
     if (!e.dataTransfer?.types.includes('Files')) return;
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
 
     const rect = canvas.getBoundingClientRect();
     const cx = (e.clientX - rect.left) * (canvas.width / rect.width);
     const cy = (e.clientY - rect.top) * (canvas.height / rect.height);
     const cellId = hitTestCell(cx, cy);
+
+    if (cellId && isSectionFull(cellId)) {
+      e.dataTransfer.dropEffect = 'none';
+      if (dragTarget !== null) {
+        dragTarget = null;
+        if (renderer) {
+          renderer.setDragTarget(null);
+          renderer.render(viewAngle);
+        }
+      }
+      return;
+    }
+
+    e.dataTransfer.dropEffect = 'copy';
 
     if (cellId !== dragTarget) {
       dragTarget = cellId;
@@ -429,7 +446,7 @@
     const cy = (e.clientY - rect.top) * (canvas.height / rect.height);
     const cellId = hitTestCell(cx, cy);
 
-    if (cellId) {
+    if (cellId && !isSectionFull(cellId)) {
       layoutStore.selectSection(cellId);
       layoutStore.addFrames(cellId, files);
     }
@@ -552,6 +569,19 @@
         Split ↕
       </button>
       <button
+        class="toolbar-btn"
+        onclick={() => layoutStore.selectedId && layoutStore.splitIntoQuarters(layoutStore.selectedId)}
+        disabled={!layoutStore.selectedId}
+        title="Split selected cell into 4 quarters"
+      >
+        <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="1" y="1" width="18" height="18" rx="1" />
+          <line x1="10" y1="1" x2="10" y2="19" />
+          <line x1="1" y1="10" x2="19" y2="10" />
+        </svg>
+        Quarters
+      </button>
+      <button
         class="toolbar-btn danger"
         onclick={() => layoutStore.selectedId && layoutStore.removeSection(layoutStore.selectedId)}
         disabled={!layoutStore.canRemoveSelected}
@@ -578,6 +608,57 @@
           No frame selected
         {/if}
       </span>
+      <button
+        class="toolbar-btn"
+        onclick={() => {
+          if (!layoutStore.selectedId || !currentFrame) return;
+          const t = currentFrame.transform ?? { scale: 1, panX: 0, panY: 0 };
+          layoutStore.setFrameTransform(layoutStore.selectedId, currentFrame.id, { ...t, flipH: !t.flipH });
+        }}
+        disabled={!currentFrame}
+        title="Flip horizontal"
+      >
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5">
+          <polyline points="1 4 5 8 1 12" />
+          <polyline points="15 4 11 8 15 12" />
+          <line x1="8" y1="2" x2="8" y2="14" stroke-dasharray="2 2" />
+        </svg>
+        Flip H
+      </button>
+      <button
+        class="toolbar-btn"
+        onclick={() => {
+          if (!layoutStore.selectedId || !currentFrame) return;
+          const t = currentFrame.transform ?? { scale: 1, panX: 0, panY: 0 };
+          layoutStore.setFrameTransform(layoutStore.selectedId, currentFrame.id, { ...t, flipV: !t.flipV });
+        }}
+        disabled={!currentFrame}
+        title="Flip vertical"
+      >
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5">
+          <polyline points="4 1 8 5 12 1" />
+          <polyline points="4 15 8 11 12 15" />
+          <line x1="2" y1="8" x2="14" y2="8" stroke-dasharray="2 2" />
+        </svg>
+        Flip V
+      </button>
+      <button
+        class="toolbar-btn"
+        onclick={() => {
+          if (!layoutStore.selectedId || !currentFrame) return;
+          const t = currentFrame.transform ?? { scale: 1, panX: 0, panY: 0 };
+          const r = ((t.rotation ?? 0) + 90) % 360;
+          layoutStore.setFrameTransform(layoutStore.selectedId, currentFrame.id, { ...t, rotation: r });
+        }}
+        disabled={!currentFrame}
+        title="Rotate 90° clockwise"
+      >
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M13 7A5 5 0 1 0 8 12" />
+          <polyline points="10 7 13 7 13 4" />
+        </svg>
+        Rotate
+      </button>
       <div class="toolbar-spacer"></div>
       <button
         class="toolbar-btn"

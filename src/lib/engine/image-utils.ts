@@ -26,7 +26,24 @@ export function normalizeFrames(
       frame.transform
     );
 
+    const flipH = frame.transform?.flipH ?? false;
+    const flipV = frame.transform?.flipV ?? false;
+    const rotation = frame.transform?.rotation ?? 0;
+    const hasFlipOrRotate = flipH || flipV || rotation !== 0;
+
+    if (hasFlipOrRotate) {
+      ctx.save();
+      ctx.translate(targetWidth / 2, targetHeight / 2);
+      if (rotation) ctx.rotate((rotation * Math.PI) / 180);
+      ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+      ctx.translate(-targetWidth / 2, -targetHeight / 2);
+    }
+
     ctx.drawImage(frame.bitmap, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
+
+    if (hasFlipOrRotate) {
+      ctx.restore();
+    }
 
     return {
       imageData: ctx.getImageData(0, 0, targetWidth, targetHeight),

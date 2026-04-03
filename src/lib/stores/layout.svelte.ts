@@ -14,6 +14,7 @@ const MIN_FRAMES_PER_SECTION = 2;
 
 function defaultParamsForEffect(effectType: EffectType): EffectParams {
   switch (effectType) {
+    case 'none': return { type: 'flip' };
     case 'flip': return { type: 'flip' };
     case 'animation': return { type: 'animation', fps: 12 };
     case 'depth3d': return { type: 'depth3d', maxDisplacement: 15, depthMapFrameId: null };
@@ -24,11 +25,17 @@ function defaultParamsForEffect(effectType: EffectType): EffectParams {
 
 function minFramesForEffect(effectType: EffectType): number {
   switch (effectType) {
+    case 'none': return 1;
     case 'zoom': return 1;
     case 'depth3d': return 2;
     case 'morph': return 2;
     default: return 2;
   }
+}
+
+function maxFramesForEffect(effectType: EffectType): number {
+  if (effectType === 'none') return 1;
+  return MAX_FRAMES_PER_SECTION;
 }
 
 class LayoutStore {
@@ -107,13 +114,26 @@ class LayoutStore {
   // --- Tree mutations ---
 
   splitSection(id: string, direction: SplitDirection) {
+    const leavesBefore = new Set(getLeaves(this.root).map(l => l.id));
     this.root = splitLeaf(this.root, id, direction);
+    const leavesAfter = getLeaves(this.root);
     // Select the first new child
-    const leaves = getLeaves(this.root);
-    // The split replaced the old leaf, so the old id is gone
-    if (!leaves.find(l => l.id === this.selectedId)) {
-      this.selectedId = leaves[0]?.id ?? null;
+    const newLeaf = leavesAfter.find(l => !leavesBefore.has(l.id));
+    this.selectedId = newLeaf?.id ?? leavesAfter[0]?.id ?? null;
+    this.preset = { id: 'custom', label: 'Custom', cols: 0, rows: 0 };
+  }
+
+  splitIntoQuarters(id: string) {
+    const leavesBefore = new Set(getLeaves(this.root).map(l => l.id));
+    this.root = splitLeaf(this.root, id, 'vertical');
+    // Find the two new leaves from the vertical split
+    const newLeafIds = getLeaves(this.root).filter(l => !leavesBefore.has(l.id)).map(l => l.id);
+    // Split each horizontally
+    for (const leafId of newLeafIds) {
+      this.root = splitLeaf(this.root, leafId, 'horizontal');
     }
+    const finalLeaves = getLeaves(this.root);
+    this.selectedId = finalLeaves.find(l => !leavesBefore.has(l.id))?.id ?? finalLeaves[0]?.id ?? null;
     this.preset = { id: 'custom', label: 'Custom', cols: 0, rows: 0 };
   }
 
@@ -230,12 +250,12 @@ class LayoutStore {
 
   canAddFrames(sectionId: string): boolean {
     const section = findLeaf(this.root, sectionId);
-    return !!section && section.frames.length < MAX_FRAMES_PER_SECTION;
+    return !!section && section.frames.length < maxFramesForEffect(section.effectType);
   }
 
   remainingSlots(sectionId: string): number {
     const section = findLeaf(this.root, sectionId);
-    return section ? MAX_FRAMES_PER_SECTION - section.frames.length : 0;
+    return section ? maxFramesForEffect(section.effectType) - section.frames.length : 0;
   }
 
   clearAll() {
