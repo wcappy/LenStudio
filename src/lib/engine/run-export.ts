@@ -1,5 +1,6 @@
 import { projectState } from '../stores/project.svelte.js';
 import { layoutStore } from '../stores/layout.svelte.js';
+import { computeTreeLayout } from '../utils/layout-tree.js';
 import { normalizeFrames } from './image-utils.js';
 import { interlaceFrames } from './interlace.js';
 import { exportPng } from './export.js';
@@ -46,10 +47,6 @@ export const EXPORT_FORMATS: ExportFormatInfo[] = [
   },
 ];
 
-/**
- * Run the full export pipeline with per-section interlacing.
- * Each section is interlaced independently, then composited onto the full output canvas.
- */
 export async function runExport(format: ExportFormat): Promise<void> {
   if (!layoutStore.isAllReady) {
     alert('Each section needs at least 2 images before exporting.');
@@ -57,50 +54,51 @@ export async function runExport(format: ExportFormat): Promise<void> {
   }
 
   const { outputWidthPx, outputHeightPx, lpi, dpi } = projectState;
-  const { sections, preset } = layoutStore;
+  const { sections, root } = layoutStore;
 
   try {
     projectState.isProcessing = true;
     projectState.processProgress = 0;
 
-    // Create full output canvas
     const outputCanvas = new OffscreenCanvas(outputWidthPx, outputHeightPx);
     const outputCtx = outputCanvas.getContext('2d')!;
 
-    // Border-aware section sizing
+    // Border-aware tree layout
     const { border } = projectState;
-    const borderPx = border.enabled && (preset.cols > 1 || preset.rows > 1) ? border.widthPx : 0;
-    const totalBorderW = borderPx * (preset.cols - 1);
-    const totalBorderH = borderPx * (preset.rows - 1);
-    const sectionW = Math.floor((outputWidthPx - totalBorderW) / preset.cols);
-    const sectionH = Math.floor((outputHeightPx - totalBorderH) / preset.rows);
-    const totalSections = sections.length;
+    const hasSplits = sections.length > 1;
+    const borderPx = border.enabled && hasSplits ? border.widthPx : 0;
+    const { cells } = computeTreeLayout(root, 0, 0, outputWidthPx, outputHeightPx, borderPx);
 
-    // Fill background with border color so gaps between cells show the border
+    // Fill background with border color
     if (borderPx > 0) {
       outputCtx.fillStyle = border.color;
       outputCtx.fillRect(0, 0, outputWidthPx, outputHeightPx);
     }
 
+    const totalSections = sections.length;
+
     for (let i = 0; i < totalSections; i++) {
       const section = sections[i];
+      const rect = cells.get(section.id);
+      if (!rect) continue;
+
       const baseProgress = Math.round((i / totalSections) * 90);
       projectState.processProgress = baseProgress;
 
-      // Normalize this section's frames to section dimensions
+      const sectionW = Math.floor(rect.w);
+      const sectionH = Math.floor(rect.h);
+
       const normalized = normalizeFrames(section.frames, sectionW, sectionH);
       const frameData = normalized
         .sort((a, b) => a.order - b.order)
         .map(f => f.imageData);
 
-      // Interlace this section
       const interlaced = interlaceFrames(frameData, lpi, dpi, (pct) => {
         projectState.processProgress = baseProgress + Math.round((pct / totalSections) * 0.9);
       });
 
-      // Composite onto output canvas at section position
-      const x = section.col * (sectionW + borderPx);
-      const y = section.row * (sectionH + borderPx);
+      const x = Math.round(rect.x);
+      const y = Math.round(rect.y);
 
       const tempCanvas = new OffscreenCanvas(interlaced.width, interlaced.height);
       const tempCtx = tempCanvas.getContext('2d')!;
@@ -108,11 +106,9 @@ export async function runExport(format: ExportFormat): Promise<void> {
       outputCtx.drawImage(tempCanvas, x, y, sectionW, sectionH);
     }
 
-    // Get final composited ImageData
     projectState.processProgress = 90;
     const finalImageData = outputCtx.getImageData(0, 0, outputWidthPx, outputHeightPx);
 
-    // Encode in chosen format
     let blob: Blob;
     const info = EXPORT_FORMATS.find(f => f.id === format)!;
 
@@ -131,7 +127,6 @@ export async function runExport(format: ExportFormat): Promise<void> {
         break;
     }
 
-    // Download
     projectState.processProgress = 100;
     const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
     downloadBlob(blob, `lenticular-${timestamp}${info.ext}`);

@@ -59,7 +59,22 @@
 </script>
 
 <section class="layout-section">
-  <span class="section-label">Layout</span>
+  <div class="section-header">
+    <span class="section-label">Layout</span>
+    <button
+      class="edit-layout-btn"
+      class:active={layoutStore.layoutMode}
+      onclick={() => layoutStore.toggleLayoutMode()}
+    >
+      <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="1" y="1" width="14" height="14" rx="1" />
+        <line x1="1" y1="8" x2="15" y2="8" />
+        <line x1="8" y1="1" x2="8" y2="15" />
+      </svg>
+      {layoutStore.layoutMode ? 'Editing' : 'Edit Layout'}
+    </button>
+  </div>
+
   <div class="preset-grid">
     {#each LAYOUT_PRESETS as preset}
       <button
@@ -156,6 +171,37 @@
   .layout-section {
     padding: 16px;
     border-bottom: 1px solid var(--border);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2px;
+  }
+
+  .edit-layout-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 5px;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+
+  .edit-layout-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .edit-layout-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
   }
 
   .preset-grid {

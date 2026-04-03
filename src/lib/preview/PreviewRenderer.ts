@@ -1,35 +1,37 @@
-import type { ImageFrame, BorderConfig } from '../types/index.js';
-import type { LayoutSection } from '../types/layout.js';
+import type { ImageFrame, BorderConfig, LayoutLeaf, LayoutNode, CellRect, DividerInfo } from '../types/index.js';
+import { computeTreeLayout } from '../utils/layout-tree.js';
 
 export class PreviewRenderer {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
-  private frames: ImageFrame[] = [];
   private overlayEnabled = false;
   private holoEnabled = false;
   private outputWidthPx = 1200;
   private printStripWidth = 5;
 
-  // Section-aware state
-  private sections: LayoutSection[] = [];
-  private cols = 1;
-  private rows = 1;
+  // Tree-based layout
+  private root: LayoutNode = { type: 'leaf', id: '', effectType: 'flip', frames: [] };
+  private sections: LayoutLeaf[] = [];
   private selectedSectionId: string | null = null;
   private borderConfig: BorderConfig = { enabled: false, widthPx: 4, color: '#000000' };
+
+  // Layout mode
+  private layoutMode = false;
+  private hoveredDivider: string | null = null; // splitId
+
+  // Cached geometry from last render
+  private lastCells: Map<string, CellRect> = new Map();
+  private lastDividers: DividerInfo[] = [];
+  private lastSplitRects: Map<string, CellRect> = new Map();
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
   }
 
-  setFrames(frames: ImageFrame[]) {
-    this.frames = frames;
-  }
-
-  setSections(sections: LayoutSection[], cols: number, rows: number, selectedId: string | null) {
+  setTree(root: LayoutNode, sections: LayoutLeaf[], selectedId: string | null) {
+    this.root = root;
     this.sections = sections;
-    this.cols = cols;
-    this.rows = rows;
     this.selectedSectionId = selectedId;
   }
 
@@ -43,6 +45,26 @@ export class PreviewRenderer {
     this.borderConfig = config;
   }
 
+  setLayoutMode(enabled: boolean) {
+    this.layoutMode = enabled;
+  }
+
+  setHoveredDivider(splitId: string | null) {
+    this.hoveredDivider = splitId;
+  }
+
+  getCells(): Map<string, CellRect> {
+    return this.lastCells;
+  }
+
+  getDividers(): DividerInfo[] {
+    return this.lastDividers;
+  }
+
+  getSplitRects(): Map<string, CellRect> {
+    return this.lastSplitRects;
+  }
+
   setHolographic(enabled: boolean) {
     this.holoEnabled = enabled;
   }
@@ -52,7 +74,6 @@ export class PreviewRenderer {
     const w = canvas.width;
     const h = canvas.height;
 
-    // Clear
     ctx.fillStyle = '#1a1a2e';
     ctx.fillRect(0, 0, w, h);
 
@@ -64,68 +85,80 @@ export class PreviewRenderer {
       return;
     }
 
-    // Calculate border size in preview pixels
-    const borderEnabled = this.borderConfig.enabled && (this.cols > 1 || this.rows > 1);
+    // Compute scaled border
+    const hasSplits = this.sections.length > 1;
+    const borderEnabled = this.borderConfig.enabled && hasSplits;
     const scale = w / this.outputWidthPx;
     const scaledBorder = borderEnabled ? this.borderConfig.widthPx * scale : 0;
 
-    const totalBorderW = scaledBorder * (this.cols - 1);
-    const totalBorderH = scaledBorder * (this.rows - 1);
-    const cellW = (w - totalBorderW) / this.cols;
-    const cellH = (h - totalBorderH) / this.rows;
+    // Compute layout from tree
+    const { cells, dividers, splitRects } = computeTreeLayout(this.root, 0, 0, w, h, scaledBorder);
+    this.lastCells = cells;
+    this.lastDividers = dividers;
+    this.lastSplitRects = splitRects;
 
-    // Render each section in its grid cell
+    // Render each section in its computed rect
     for (const section of this.sections) {
-      const x = section.col * (cellW + scaledBorder);
-      const y = section.row * (cellH + scaledBorder);
+      const rect = cells.get(section.id);
+      if (!rect) continue;
 
       ctx.save();
       ctx.beginPath();
-      ctx.rect(x, y, cellW, cellH);
+      ctx.rect(rect.x, rect.y, rect.w, rect.h);
       ctx.clip();
 
       if (section.frames.length === 0) {
-        // Empty section placeholder
         ctx.fillStyle = '#1a1a2e';
-        ctx.fillRect(x, y, cellW, cellH);
+        ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
         ctx.fillStyle = '#8892a4';
         ctx.font = '12px Inter, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('+', x + cellW / 2, y + cellH / 2);
+        ctx.fillText('+', rect.x + rect.w / 2, rect.y + rect.h / 2);
       } else {
-        // Render frames with blending
-        this.renderSectionFrames(section.frames, viewAngle, x, y, cellW, cellH);
+        this.renderSectionFrames(section.frames, viewAngle, rect.x, rect.y, rect.w, rect.h);
       }
 
       ctx.restore();
     }
 
-    // Draw grid lines / borders between sections
-    if (this.cols > 1 || this.rows > 1) {
-      this.renderGridLines(cellW, cellH, scaledBorder);
+    // Draw borders / grid lines
+    if (hasSplits) {
+      this.renderDividers(dividers, scaledBorder);
     }
 
-    // Lenticular overlay spans full canvas (one lens sheet)
+    // Selected section highlight
+    if (this.selectedSectionId) {
+      const selRect = cells.get(this.selectedSectionId);
+      if (selRect) {
+        ctx.save();
+        ctx.strokeStyle = '#e94560';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(selRect.x + 1, selRect.y + 1, selRect.w - 2, selRect.h - 2);
+        ctx.restore();
+      }
+    }
+
+    // Layout mode handles
+    if (this.layoutMode && hasSplits) {
+      this.renderLayoutHandles(dividers);
+    }
+
     if (this.overlayEnabled) {
       this.renderOverlay(viewAngle);
     }
 
-    // Holographic overlay spans full canvas
     if (this.holoEnabled) {
       this.renderHolographic(viewAngle);
     }
   }
 
   private renderSectionFrames(
-    frames: ImageFrame[],
-    viewAngle: number,
-    x: number, y: number,
-    w: number, h: number
+    frames: ImageFrame[], viewAngle: number,
+    x: number, y: number, w: number, h: number
   ) {
     const { ctx } = this;
     const n = frames.length;
-
     const pos = viewAngle * (n - 1);
     const idx = Math.floor(pos);
     const blend = pos - idx;
@@ -145,57 +178,73 @@ export class PreviewRenderer {
     }
   }
 
-  private renderGridLines(cellW: number, cellH: number, scaledBorder: number) {
-    const { ctx, canvas } = this;
-    const w = canvas.width;
-    const h = canvas.height;
+  private renderDividers(dividers: DividerInfo[], scaledBorder: number) {
+    const { ctx } = this;
     const borderEnabled = this.borderConfig.enabled && scaledBorder > 0;
 
     if (borderEnabled) {
-      // Draw filled border rectangles
       ctx.save();
       ctx.fillStyle = this.borderConfig.color;
-      for (let c = 1; c < this.cols; c++) {
-        const x = c * (cellW + scaledBorder) - scaledBorder;
-        ctx.fillRect(x, 0, scaledBorder, h);
-      }
-      for (let r = 1; r < this.rows; r++) {
-        const y = r * (cellH + scaledBorder) - scaledBorder;
-        ctx.fillRect(0, y, w, scaledBorder);
+      for (const d of dividers) {
+        ctx.fillRect(d.x, d.y, d.w, d.h);
       }
       ctx.restore();
     } else {
-      // Default thin hairline dividers
       ctx.save();
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      for (let c = 1; c < this.cols; c++) {
-        const x = Math.round(c * cellW) + 0.5;
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, h);
-      }
-      for (let r = 1; r < this.rows; r++) {
-        const y = Math.round(r * cellH) + 0.5;
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
+      for (const d of dividers) {
+        if (d.direction === 'vertical') {
+          const x = Math.round(d.x) + 0.5;
+          ctx.moveTo(x, d.y);
+          ctx.lineTo(x, d.y + d.h);
+        } else {
+          const y = Math.round(d.y) + 0.5;
+          ctx.moveTo(d.x, y);
+          ctx.lineTo(d.x + d.w, y);
+        }
       }
       ctx.stroke();
       ctx.restore();
     }
+  }
 
-    // Selected section highlight
-    if (this.selectedSectionId) {
-      const sel = this.sections.find(s => s.id === this.selectedSectionId);
-      if (sel) {
-        const sx = sel.col * (cellW + scaledBorder);
-        const sy = sel.row * (cellH + scaledBorder);
-        ctx.save();
-        ctx.strokeStyle = '#e94560';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(sx + 1, sy + 1, cellW - 2, cellH - 2);
-        ctx.restore();
+  private renderLayoutHandles(dividers: DividerInfo[]) {
+    const { ctx } = this;
+
+    for (const d of dividers) {
+      const isHovered = this.hoveredDivider === d.splitId;
+
+      ctx.save();
+      if (d.direction === 'vertical') {
+        const cx = d.x + d.w / 2;
+        // Highlight zone
+        ctx.fillStyle = isHovered ? 'rgba(233, 69, 96, 0.3)' : 'rgba(255, 255, 255, 0.08)';
+        const zoneW = Math.max(d.w, 8);
+        ctx.fillRect(cx - zoneW / 2, d.y, zoneW, d.h);
+
+        // Grab handle pill
+        const handleH = Math.min(32, d.h * 0.4);
+        const handleW = 6;
+        ctx.fillStyle = isHovered ? '#e94560' : 'rgba(255, 255, 255, 0.5)';
+        ctx.beginPath();
+        ctx.roundRect(cx - handleW / 2, d.y + d.h / 2 - handleH / 2, handleW, handleH, 3);
+        ctx.fill();
+      } else {
+        const cy = d.y + d.h / 2;
+        ctx.fillStyle = isHovered ? 'rgba(233, 69, 96, 0.3)' : 'rgba(255, 255, 255, 0.08)';
+        const zoneH = Math.max(d.h, 8);
+        ctx.fillRect(d.x, cy - zoneH / 2, d.w, zoneH);
+
+        const handleW = Math.min(32, d.w * 0.4);
+        const handleH = 6;
+        ctx.fillStyle = isHovered ? '#e94560' : 'rgba(255, 255, 255, 0.5)';
+        ctx.beginPath();
+        ctx.roundRect(d.x + d.w / 2 - handleW / 2, cy - handleH / 2, handleW, handleH, 3);
+        ctx.fill();
       }
+      ctx.restore();
     }
   }
 
@@ -203,10 +252,8 @@ export class PreviewRenderer {
     const { ctx, canvas } = this;
     const w = canvas.width;
     const h = canvas.height;
-
     const scale = w / this.outputWidthPx;
     const stripPx = this.printStripWidth * scale;
-
     if (stripPx < 1.5) return;
 
     const numStrips = Math.ceil(w / stripPx);
@@ -215,11 +262,10 @@ export class PreviewRenderer {
     for (let i = 0; i < numStrips; i++) {
       const x = i * stripPx;
       const grad = ctx.createLinearGradient(x, 0, x + stripPx, 0);
-      const edgeAlpha = 0.12;
-      grad.addColorStop(0, `rgba(0, 0, 0, ${edgeAlpha})`);
+      grad.addColorStop(0, 'rgba(0, 0, 0, 0.12)');
       grad.addColorStop(0.3, 'rgba(0, 0, 0, 0)');
       grad.addColorStop(0.7, 'rgba(0, 0, 0, 0)');
-      grad.addColorStop(1, `rgba(0, 0, 0, ${edgeAlpha})`);
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0.12)');
       ctx.fillStyle = grad;
       ctx.fillRect(x, 0, stripPx, h);
     }
@@ -313,7 +359,6 @@ export class PreviewRenderer {
   }
 
   destroy() {
-    this.frames = [];
     this.sections = [];
   }
 }

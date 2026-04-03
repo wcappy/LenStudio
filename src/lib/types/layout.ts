@@ -1,6 +1,54 @@
 import type { EffectType } from './settings.js';
 import type { ImageFrame } from './image.js';
 
+// --- Layout tree types ---
+
+export type SplitDirection = 'horizontal' | 'vertical';
+
+/** A leaf node — one section that holds frames for a lenticular effect */
+export interface LayoutLeaf {
+  type: 'leaf';
+  id: string;
+  effectType: EffectType;
+  frames: ImageFrame[];
+}
+
+/** A split node — divides space between two children */
+export interface LayoutSplit {
+  type: 'split';
+  id: string;
+  direction: SplitDirection; // 'vertical' = left|right, 'horizontal' = top|bottom
+  ratio: number;            // 0-1, fraction of space given to first child
+  children: [LayoutNode, LayoutNode];
+}
+
+export type LayoutNode = LayoutLeaf | LayoutSplit;
+
+/** Rect describing a cell's position in pixels */
+export interface CellRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** Describes a divider between two cells */
+export interface DividerInfo {
+  splitId: string;
+  direction: SplitDirection;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+// --- Backward compat ---
+
+/** @deprecated Use LayoutLeaf instead */
+export type LayoutSection = LayoutLeaf;
+
+// --- Presets ---
+
 export interface LayoutPreset {
   id: string;
   label: string;
@@ -19,11 +67,3 @@ export const LAYOUT_PRESETS: LayoutPreset[] = [
   { id: '3x2',      label: '3 × 2',      cols: 3, rows: 2 },
   { id: '3x3',      label: '3 × 3',      cols: 3, rows: 3 },
 ];
-
-export interface LayoutSection {
-  id: string;
-  row: number;
-  col: number;
-  effectType: EffectType;
-  frames: ImageFrame[];
-}
