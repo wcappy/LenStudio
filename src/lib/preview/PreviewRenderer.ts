@@ -1,4 +1,4 @@
-import type { ImageFrame, BorderConfig, LayoutLeaf, LayoutNode, CellRect, DividerInfo } from '../types/index.js';
+import type { ImageFrame, ImageTransform, BorderConfig, LayoutLeaf, LayoutNode, CellRect, DividerInfo } from '../types/index.js';
 import { computeTreeLayout } from '../utils/layout-tree.js';
 
 export class PreviewRenderer {
@@ -15,8 +15,9 @@ export class PreviewRenderer {
   private selectedSectionId: string | null = null;
   private borderConfig: BorderConfig = { enabled: false, widthPx: 4, color: '#000000' };
 
-  // Layout mode
+  // Modes
   private layoutMode = false;
+  private imageMode = false;
   private hoveredDivider: string | null = null; // splitId
 
   // Cached geometry from last render
@@ -47,6 +48,10 @@ export class PreviewRenderer {
 
   setLayoutMode(enabled: boolean) {
     this.layoutMode = enabled;
+  }
+
+  setImageMode(enabled: boolean) {
+    this.imageMode = enabled;
   }
 
   setHoveredDivider(splitId: string | null) {
@@ -168,14 +173,58 @@ export class PreviewRenderer {
 
     if (!frameA.bitmap) return;
 
+    const srcA = this.computeSourceRect(frameA.bitmap, w, h, frameA.transform);
     ctx.globalAlpha = 1;
-    ctx.drawImage(frameA.bitmap, x, y, w, h);
+    ctx.drawImage(frameA.bitmap, srcA.sx, srcA.sy, srcA.sw, srcA.sh, x, y, w, h);
 
     if (blend > 0.01 && frameB.bitmap && frameA.id !== frameB.id) {
+      const srcB = this.computeSourceRect(frameB.bitmap, w, h, frameB.transform);
       ctx.globalAlpha = blend;
-      ctx.drawImage(frameB.bitmap, x, y, w, h);
+      ctx.drawImage(frameB.bitmap, srcB.sx, srcB.sy, srcB.sw, srcB.sh, x, y, w, h);
       ctx.globalAlpha = 1;
     }
+  }
+
+  private computeSourceRect(
+    bitmap: ImageBitmap, cellW: number, cellH: number,
+    transform?: ImageTransform
+  ): { sx: number; sy: number; sw: number; sh: number } {
+    const bw = bitmap.width;
+    const bh = bitmap.height;
+    const srcAspect = bw / bh;
+    const dstAspect = cellW / cellH;
+
+    // Cover-fit: find the source rect that fills the cell
+    let sw: number, sh: number;
+    if (srcAspect > dstAspect) {
+      sh = bh;
+      sw = bh * dstAspect;
+    } else {
+      sw = bw;
+      sh = bw / dstAspect;
+    }
+
+    // Apply scale (higher scale = zoom in = smaller source rect)
+    const scale = transform?.scale ?? 1;
+    sw /= scale;
+    sh /= scale;
+
+    // Center, then apply pan offset
+    let sx = (bw - sw) / 2;
+    let sy = (bh - sh) / 2;
+
+    const panX = transform?.panX ?? 0;
+    const panY = transform?.panY ?? 0;
+    sx += panX * (bw - sw) / 2;
+    sy += panY * (bh - sh) / 2;
+
+    // Clamp to bitmap bounds
+    sx = Math.max(0, Math.min(sx, bw - sw));
+    sy = Math.max(0, Math.min(sy, bh - sh));
+    sw = Math.min(sw, bw - sx);
+    sh = Math.min(sh, bh - sy);
+
+    return { sx, sy, sw, sh };
   }
 
   private renderDividers(dividers: DividerInfo[], scaledBorder: number) {

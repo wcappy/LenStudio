@@ -1,5 +1,5 @@
 import type {
-  LayoutPreset, LayoutLeaf, LayoutNode, SplitDirection, ImageFrame, EffectType
+  LayoutPreset, LayoutLeaf, LayoutNode, SplitDirection, ImageFrame, ImageTransform, EffectType
 } from '../types/index.js';
 import { LAYOUT_PRESETS } from '../types/index.js';
 import {
@@ -16,6 +16,7 @@ class LayoutStore {
   root = $state<LayoutNode>(createLeaf());
   selectedId = $state<string | null>(null);
   layoutMode = $state(false);
+  imageMode = $state(false);
 
   /** Flat list of all leaf sections (backward compat) */
   sections = $derived(getLeaves(this.root));
@@ -56,6 +57,31 @@ class LayoutStore {
 
   toggleLayoutMode() {
     this.layoutMode = !this.layoutMode;
+    if (this.layoutMode) this.imageMode = false;
+  }
+
+  toggleImageMode() {
+    this.imageMode = !this.imageMode;
+    if (this.imageMode) this.layoutMode = false;
+  }
+
+  setFrameTransform(sectionId: string, frameId: string, transform: ImageTransform) {
+    this.root = updateLeaf(this.root, sectionId, leaf => ({
+      ...leaf,
+      frames: leaf.frames.map(f =>
+        f.id === frameId ? { ...f, transform } : f
+      ),
+    }));
+  }
+
+  resetFrameTransforms(sectionId: string) {
+    this.root = updateLeaf(this.root, sectionId, leaf => ({
+      ...leaf,
+      frames: leaf.frames.map(f => {
+        const { transform, ...rest } = f;
+        return rest;
+      }),
+    }));
   }
 
   // --- Tree mutations ---

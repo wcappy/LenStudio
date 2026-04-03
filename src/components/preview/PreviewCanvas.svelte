@@ -2,7 +2,7 @@
   import { projectState } from '../../lib/stores/project.svelte.js';
   import { layoutStore } from '../../lib/stores/layout.svelte.js';
   import { PreviewRenderer } from '../../lib/preview/PreviewRenderer.js';
-  import type { DividerInfo } from '../../lib/types/index.js';
+  import type { DividerInfo, ImageTransform } from '../../lib/types/index.js';
 
   let canvas: HTMLCanvasElement;
   let container: HTMLDivElement;
@@ -13,11 +13,30 @@
   let showHolo = $state(false);
   let isFullscreen = $state(false);
 
-  // Drag state
+  // Layout mode drag state
   let dragging: DividerInfo | null = $state(null);
+  // Image mode drag state
+  let imageDragging = $state(false);
+  let lastDragPos: { x: number; y: number } | null = null;
+  // Pinch-to-zoom state
+  let lastPinchDist: number | null = null;
+
   let canvasCursor = $state('default');
 
   const hasSplits = $derived(layoutStore.sectionCount > 1);
+
+  // Current frame for image mode
+  const currentFrame = $derived.by(() => {
+    const section = layoutStore.selectedSection;
+    if (!section || section.frames.length === 0) return null;
+    const n = section.frames.length;
+    const idx = Math.round(viewAngle * (n - 1));
+    return section.frames[Math.min(idx, n - 1)] ?? null;
+  });
+
+  const currentScale = $derived(
+    currentFrame?.transform?.scale ?? 1
+  );
 
   $effect(() => {
     if (canvas && !renderer) {
@@ -29,7 +48,6 @@
     };
   });
 
-  // Pass tree + sections to renderer
   $effect(() => {
     if (renderer) {
       renderer.setTree(layoutStore.root, layoutStore.sections, layoutStore.selectedId);
@@ -37,10 +55,10 @@
     }
   });
 
-  // Sync layout mode
   $effect(() => {
     if (renderer) {
       renderer.setLayoutMode(layoutStore.layoutMode && hasSplits);
+      renderer.setImageMode(layoutStore.imageMode);
       renderer.render(viewAngle);
     }
   });
@@ -126,62 +144,121 @@
     return null;
   }
 
-  function applyDrag(pos: { x: number; y: number }) {
+  // --- Layout mode drag ---
+  function applyLayoutDrag(pos: { x: number; y: number }) {
     if (!dragging || !renderer) return;
-
-    // Look up the bounding rect of the split node being dragged
     const splitRects = renderer.getSplitRects();
     const bounds = splitRects.get(dragging.splitId);
     if (!bounds) return;
 
     if (dragging.direction === 'vertical') {
-      const ratio = (pos.x - bounds.x) / bounds.w;
-      layoutStore.updateSplitRatio(dragging.splitId, ratio);
+      layoutStore.updateSplitRatio(dragging.splitId, (pos.x - bounds.x) / bounds.w);
     } else {
-      const ratio = (pos.y - bounds.y) / bounds.h;
-      layoutStore.updateSplitRatio(dragging.splitId, ratio);
+      layoutStore.updateSplitRatio(dragging.splitId, (pos.y - bounds.y) / bounds.h);
     }
+  }
+
+  // --- Image mode pan ---
+  function applyImagePan(pos: { x: number; y: number }) {
+    if (!lastDragPos || !currentFrame || !layoutStore.selectedSection) return;
+    const section = layoutStore.selectedSection;
+    const cellRect = renderer?.getCells().get(section.id);
+    if (!cellRect) return;
+
+    const dx = pos.x - lastDragPos.x;
+    const dy = pos.y - lastDragPos.y;
+    lastDragPos = pos;
+
+    const t = currentFrame.transform ?? { scale: 1, panX: 0, panY: 0 };
+    const panX = Math.max(-1, Math.min(1, t.panX + (dx / cellRect.w) * 2));
+    const panY = Math.max(-1, Math.min(1, t.panY + (dy / cellRect.h) * 2));
+
+    layoutStore.setFrameTransform(section.id, currentFrame.id, {
+      scale: t.scale,
+      panX,
+      panY,
+    });
   }
 
   // --- Mouse handlers ---
   function handleMouseMove(e: MouseEvent) {
-    if (!renderer || !layoutStore.layoutMode || !hasSplits) return;
+    if (!renderer) return;
 
-    const pos = canvasCoords(e);
-
-    if (dragging) {
-      applyDrag(pos);
+    // Image mode: drag to pan
+    if (layoutStore.imageMode && imageDragging) {
+      applyImagePan(canvasCoords(e));
       return;
     }
 
-    const hit = hitTestDivider(pos.x, pos.y);
-    renderer.setHoveredDivider(hit?.splitId ?? null);
-    canvasCursor = hit
-      ? (hit.direction === 'vertical' ? 'col-resize' : 'row-resize')
-      : 'default';
-    renderer.render(viewAngle);
+    // Layout mode: divider hover/drag
+    if (layoutStore.layoutMode && hasSplits) {
+      const pos = canvasCoords(e);
+      if (dragging) {
+        applyLayoutDrag(pos);
+        return;
+      }
+      const hit = hitTestDivider(pos.x, pos.y);
+      renderer.setHoveredDivider(hit?.splitId ?? null);
+      canvasCursor = hit
+        ? (hit.direction === 'vertical' ? 'col-resize' : 'row-resize')
+        : 'default';
+      renderer.render(viewAngle);
+    }
   }
 
   function handleMouseDown(e: MouseEvent) {
-    if (!layoutStore.layoutMode || !hasSplits) return;
     const pos = canvasCoords(e);
 
-    const divHit = hitTestDivider(pos.x, pos.y);
-    if (divHit) {
-      e.preventDefault();
-      dragging = divHit;
+    // Image mode: start pan drag
+    if (layoutStore.imageMode) {
+      const cellId = hitTestCell(pos.x, pos.y);
+      if (cellId) {
+        layoutStore.selectSection(cellId);
+      }
+      if (currentFrame) {
+        e.preventDefault();
+        imageDragging = true;
+        lastDragPos = pos;
+        canvasCursor = 'grabbing';
+      }
       return;
     }
 
-    // Click on cell to select it
-    const cellId = hitTestCell(pos.x, pos.y);
-    if (cellId) {
-      layoutStore.selectSection(cellId);
+    // Layout mode
+    if (layoutStore.layoutMode && hasSplits) {
+      const divHit = hitTestDivider(pos.x, pos.y);
+      if (divHit) {
+        e.preventDefault();
+        dragging = divHit;
+        return;
+      }
+      const cellId = hitTestCell(pos.x, pos.y);
+      if (cellId) layoutStore.selectSection(cellId);
     }
   }
 
   function handleMouseUp() {
     dragging = null;
+    if (imageDragging) {
+      imageDragging = false;
+      lastDragPos = null;
+      canvasCursor = layoutStore.imageMode ? 'grab' : 'default';
+    }
+  }
+
+  function handleWheel(e: WheelEvent) {
+    if (!layoutStore.imageMode || !currentFrame || !layoutStore.selectedSection) return;
+    e.preventDefault();
+
+    const section = layoutStore.selectedSection;
+    const t = currentFrame.transform ?? { scale: 1, panX: 0, panY: 0 };
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    const scale = Math.max(0.5, Math.min(3, t.scale + delta));
+
+    layoutStore.setFrameTransform(section.id, currentFrame.id, {
+      ...t,
+      scale,
+    });
   }
 
   function handleDblClick(e: MouseEvent) {
@@ -194,7 +271,34 @@
   }
 
   // --- Touch handlers ---
+  function pinchDistance(e: TouchEvent): number {
+    const [a, b] = [e.touches[0], e.touches[1]];
+    return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  }
+
   function handleTouchStart(e: TouchEvent) {
+    if (layoutStore.imageMode) {
+      if (e.touches.length === 2) {
+        // Start pinch-to-zoom
+        e.preventDefault();
+        lastPinchDist = pinchDistance(e);
+        imageDragging = false;
+        lastDragPos = null;
+        return;
+      }
+      if (e.touches.length === 1) {
+        const pos = canvasCoords(e.touches[0]);
+        const cellId = hitTestCell(pos.x, pos.y);
+        if (cellId) layoutStore.selectSection(cellId);
+        if (currentFrame) {
+          e.preventDefault();
+          imageDragging = true;
+          lastDragPos = pos;
+        }
+        return;
+      }
+    }
+
     if (!layoutStore.layoutMode || !hasSplits || e.touches.length !== 1) return;
     const pos = canvasCoords(e.touches[0]);
     const hit = hitTestDivider(pos.x, pos.y);
@@ -208,13 +312,40 @@
   }
 
   function handleTouchMove(e: TouchEvent) {
-    if (!dragging || e.touches.length !== 1) return;
-    e.preventDefault();
-    applyDrag(canvasCoords(e.touches[0]));
+    if (layoutStore.imageMode) {
+      // Pinch-to-zoom
+      if (e.touches.length === 2 && lastPinchDist !== null && currentFrame && layoutStore.selectedSection) {
+        e.preventDefault();
+        const dist = pinchDistance(e);
+        const delta = (dist - lastPinchDist) / 150;
+        lastPinchDist = dist;
+
+        const section = layoutStore.selectedSection;
+        const t = currentFrame.transform ?? { scale: 1, panX: 0, panY: 0 };
+        const scale = Math.max(0.5, Math.min(3, t.scale + delta));
+        layoutStore.setFrameTransform(section.id, currentFrame.id, { ...t, scale });
+        return;
+      }
+
+      // Single-finger pan
+      if (imageDragging && e.touches.length === 1) {
+        e.preventDefault();
+        applyImagePan(canvasCoords(e.touches[0]));
+        return;
+      }
+    }
+
+    if (dragging && e.touches.length === 1) {
+      e.preventDefault();
+      applyLayoutDrag(canvasCoords(e.touches[0]));
+    }
   }
 
   function handleTouchEnd() {
     dragging = null;
+    imageDragging = false;
+    lastDragPos = null;
+    lastPinchDist = null;
   }
 
   function handleScrub(e: Event) {
@@ -230,6 +361,15 @@
       await document.exitFullscreen();
     }
   }
+
+  // Update cursor when mode changes
+  $effect(() => {
+    if (layoutStore.imageMode) {
+      canvasCursor = 'grab';
+    } else if (!layoutStore.layoutMode) {
+      canvasCursor = 'default';
+    }
+  });
 </script>
 
 <svelte:window onresize={handleResize} onmouseup={handleMouseUp} />
@@ -240,12 +380,14 @@
       bind:this={canvas}
       class="preview-canvas"
       class:layout-mode={layoutStore.layoutMode}
+      class:image-mode={layoutStore.imageMode}
       style="cursor: {canvasCursor};"
       width="400"
       height="600"
       onmousemove={handleMouseMove}
       onmousedown={handleMouseDown}
       ondblclick={handleDblClick}
+      onwheel={handleWheel}
       ontouchstart={handleTouchStart}
       ontouchmove={handleTouchMove}
       ontouchend={handleTouchEnd}
@@ -253,7 +395,7 @@
   </div>
 
   {#if layoutStore.layoutMode}
-    <div class="layout-toolbar">
+    <div class="mode-toolbar">
       <button
         class="toolbar-btn"
         onclick={() => layoutStore.selectedId && layoutStore.splitSection(layoutStore.selectedId, 'vertical')}
@@ -287,17 +429,34 @@
         ✕ Remove
       </button>
       <div class="toolbar-spacer"></div>
+      <button class="toolbar-btn" onclick={() => layoutStore.resetRatios()} title="Reset all splits to equal">
+        Reset
+      </button>
+      <button class="toolbar-btn done" onclick={() => layoutStore.toggleLayoutMode()}>
+        Done
+      </button>
+    </div>
+  {/if}
+
+  {#if layoutStore.imageMode}
+    <div class="mode-toolbar image">
+      <span class="toolbar-info">
+        {#if currentFrame}
+          Frame {(currentFrame.order ?? 0) + 1} &mdash; {Math.round(currentScale * 100)}%
+        {:else}
+          No frame selected
+        {/if}
+      </span>
+      <div class="toolbar-spacer"></div>
       <button
         class="toolbar-btn"
-        onclick={() => layoutStore.resetRatios()}
-        title="Reset all splits to equal"
+        onclick={() => layoutStore.selectedId && layoutStore.resetFrameTransforms(layoutStore.selectedId)}
+        disabled={!layoutStore.selectedId}
+        title="Reset all frame transforms in this section"
       >
         Reset
       </button>
-      <button
-        class="toolbar-btn done"
-        onclick={() => layoutStore.toggleLayoutMode()}
-      >
+      <button class="toolbar-btn done" onclick={() => layoutStore.toggleImageMode()}>
         Done
       </button>
     </div>
@@ -411,6 +570,7 @@
     border-radius: 4px;
     max-width: 100%;
     max-height: 100%;
+    touch-action: none;
   }
 
   .preview-canvas.layout-mode {
@@ -418,17 +578,34 @@
     box-shadow: 0 0 0 1px var(--accent);
   }
 
-  /* --- Layout toolbar --- */
-  .layout-toolbar {
+  .preview-canvas.image-mode {
+    border-color: #51cf66;
+    box-shadow: 0 0 0 1px #51cf66;
+  }
+
+  /* --- Mode toolbars --- */
+  .mode-toolbar {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    padding: 6px 10px;
     background: var(--surface);
     border: 1px solid var(--accent);
     border-radius: 8px;
     width: 100%;
     max-width: 600px;
+  }
+
+  .mode-toolbar.image {
+    border-color: #51cf66;
+  }
+
+  .toolbar-info {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
   }
 
   .toolbar-btn {
@@ -462,6 +639,10 @@
   .toolbar-btn.done {
     background: var(--accent);
     color: #fff;
+  }
+
+  .mode-toolbar.image .toolbar-btn.done {
+    background: #51cf66;
   }
 
   .toolbar-btn.done:hover {
@@ -512,5 +693,26 @@
 
   .fullscreen-toggle:hover {
     color: var(--text);
+  }
+
+  @media (max-width: 768px) {
+    .preview-wrapper {
+      padding: 8px;
+      gap: 4px;
+    }
+
+    .mode-toolbar {
+      padding: 4px 8px;
+    }
+
+    .toolbar-btn {
+      padding: 4px 6px;
+      font-size: 10px;
+    }
+
+    .preview-controls {
+      padding: 6px 10px;
+      gap: 8px;
+    }
   }
 </style>

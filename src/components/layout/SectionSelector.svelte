@@ -56,6 +56,13 @@
     position: relative;
     margin: 8px auto 0;
     max-width: 100%;
+    overflow: hidden;
+  }
+
+  @media (max-width: 768px) {
+    .grid-preview {
+      max-width: 160px;
+    }
   }
 
   .cell {

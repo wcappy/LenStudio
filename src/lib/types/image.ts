@@ -1,3 +1,9 @@
+export interface ImageTransform {
+  scale: number;  // 1 = cover-fit (default), >1 = zoom in
+  panX: number;   // -1 to 1, horizontal offset (0 = centered)
+  panY: number;   // -1 to 1, vertical offset (0 = centered)
+}
+
 export interface ImageFrame {
   id: string;
   file: File;
@@ -7,6 +13,7 @@ export interface ImageFrame {
   width: number;
   height: number;
   cropRect?: CropRect;
+  transform?: ImageTransform;
 }
 
 export interface CropRect {

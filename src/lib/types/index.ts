@@ -1,4 +1,4 @@
-export type { ImageFrame, CropRect, NormalizedFrame } from './image.js';
+export type { ImageFrame, ImageTransform, CropRect, NormalizedFrame } from './image.js';
 export type {
   LPI, DPI, EffectType, ExportFormat,
   LenticularSettings, ExportSettings, BorderConfig
