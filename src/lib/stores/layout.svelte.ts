@@ -149,6 +149,24 @@ class LayoutStore {
     return section ? MAX_FRAMES_PER_SECTION - section.frames.length : 0;
   }
 
+  customCols = $state(2);
+  customRows = $state(2);
+
+  setCustomGrid(cols: number, rows: number) {
+    const clampedCols = Math.max(1, Math.min(cols, 6));
+    const clampedRows = Math.max(1, Math.min(rows, 6));
+    this.customCols = clampedCols;
+    this.customRows = clampedRows;
+
+    const customPreset: LayoutPreset = {
+      id: 'custom',
+      label: `${clampedCols} \u00d7 ${clampedRows}`,
+      cols: clampedCols,
+      rows: clampedRows,
+    };
+    this.setPreset(customPreset);
+  }
+
   clearAll() {
     for (const section of this.sections) {
       for (const frame of section.frames) {

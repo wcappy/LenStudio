@@ -67,9 +67,20 @@ export async function runExport(format: ExportFormat): Promise<void> {
     const outputCanvas = new OffscreenCanvas(outputWidthPx, outputHeightPx);
     const outputCtx = outputCanvas.getContext('2d')!;
 
-    const sectionW = Math.floor(outputWidthPx / preset.cols);
-    const sectionH = Math.floor(outputHeightPx / preset.rows);
+    // Border-aware section sizing
+    const { border } = projectState;
+    const borderPx = border.enabled && (preset.cols > 1 || preset.rows > 1) ? border.widthPx : 0;
+    const totalBorderW = borderPx * (preset.cols - 1);
+    const totalBorderH = borderPx * (preset.rows - 1);
+    const sectionW = Math.floor((outputWidthPx - totalBorderW) / preset.cols);
+    const sectionH = Math.floor((outputHeightPx - totalBorderH) / preset.rows);
     const totalSections = sections.length;
+
+    // Fill background with border color so gaps between cells show the border
+    if (borderPx > 0) {
+      outputCtx.fillStyle = border.color;
+      outputCtx.fillRect(0, 0, outputWidthPx, outputHeightPx);
+    }
 
     for (let i = 0; i < totalSections; i++) {
       const section = sections[i];
@@ -88,8 +99,8 @@ export async function runExport(format: ExportFormat): Promise<void> {
       });
 
       // Composite onto output canvas at section position
-      const x = section.col * sectionW;
-      const y = section.row * sectionH;
+      const x = section.col * (sectionW + borderPx);
+      const y = section.row * (sectionH + borderPx);
 
       const tempCanvas = new OffscreenCanvas(interlaced.width, interlaced.height);
       const tempCtx = tempCanvas.getContext('2d')!;

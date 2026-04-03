@@ -1,12 +1,17 @@
 <script lang="ts">
   import { layoutStore } from '../../lib/stores/layout.svelte.js';
+  import { projectState } from '../../lib/stores/project.svelte.js';
+
+  const gridGap = $derived(
+    projectState.border.enabled ? Math.max(2, Math.round(projectState.border.widthPx / 2)) : 3
+  );
 </script>
 
 <section class="section-selector">
   <span class="section-label">Sections</span>
   <div
     class="grid"
-    style="grid-template-columns: repeat({layoutStore.preset.cols}, 1fr); grid-template-rows: repeat({layoutStore.preset.rows}, 1fr);"
+    style="grid-template-columns: repeat({layoutStore.preset.cols}, 1fr); grid-template-rows: repeat({layoutStore.preset.rows}, 1fr); gap: {gridGap}px;"
   >
     {#each layoutStore.sections as section (section.id)}
       <button
@@ -36,7 +41,6 @@
 
   .grid {
     display: grid;
-    gap: 3px;
     margin-top: 8px;
     aspect-ratio: 4 / 6;
     max-height: 180px;

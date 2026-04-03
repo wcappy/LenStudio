@@ -1,4 +1,4 @@
-import type { ImageFrame } from '../types/index.js';
+import type { ImageFrame, BorderConfig } from '../types/index.js';
 import type { LayoutSection } from '../types/layout.js';
 
 export class PreviewRenderer {
@@ -15,6 +15,7 @@ export class PreviewRenderer {
   private cols = 1;
   private rows = 1;
   private selectedSectionId: string | null = null;
+  private borderConfig: BorderConfig = { enabled: false, widthPx: 4, color: '#000000' };
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -38,6 +39,10 @@ export class PreviewRenderer {
     this.printStripWidth = stripWidth;
   }
 
+  setBorder(config: BorderConfig) {
+    this.borderConfig = config;
+  }
+
   setHolographic(enabled: boolean) {
     this.holoEnabled = enabled;
   }
@@ -59,13 +64,20 @@ export class PreviewRenderer {
       return;
     }
 
-    const cellW = w / this.cols;
-    const cellH = h / this.rows;
+    // Calculate border size in preview pixels
+    const borderEnabled = this.borderConfig.enabled && (this.cols > 1 || this.rows > 1);
+    const scale = w / this.outputWidthPx;
+    const scaledBorder = borderEnabled ? this.borderConfig.widthPx * scale : 0;
+
+    const totalBorderW = scaledBorder * (this.cols - 1);
+    const totalBorderH = scaledBorder * (this.rows - 1);
+    const cellW = (w - totalBorderW) / this.cols;
+    const cellH = (h - totalBorderH) / this.rows;
 
     // Render each section in its grid cell
     for (const section of this.sections) {
-      const x = section.col * cellW;
-      const y = section.row * cellH;
+      const x = section.col * (cellW + scaledBorder);
+      const y = section.row * (cellH + scaledBorder);
 
       ctx.save();
       ctx.beginPath();
@@ -89,9 +101,9 @@ export class PreviewRenderer {
       ctx.restore();
     }
 
-    // Draw grid lines between sections
+    // Draw grid lines / borders between sections
     if (this.cols > 1 || this.rows > 1) {
-      this.renderGridLines(cellW, cellH);
+      this.renderGridLines(cellW, cellH, scaledBorder);
     }
 
     // Lenticular overlay spans full canvas (one lens sheet)
@@ -133,43 +145,55 @@ export class PreviewRenderer {
     }
   }
 
-  private renderGridLines(cellW: number, cellH: number) {
+  private renderGridLines(cellW: number, cellH: number, scaledBorder: number) {
     const { ctx, canvas } = this;
     const w = canvas.width;
     const h = canvas.height;
+    const borderEnabled = this.borderConfig.enabled && scaledBorder > 0;
 
-    // Grid dividers
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-
-    for (let c = 1; c < this.cols; c++) {
-      const x = Math.round(c * cellW) + 0.5;
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, h);
+    if (borderEnabled) {
+      // Draw filled border rectangles
+      ctx.save();
+      ctx.fillStyle = this.borderConfig.color;
+      for (let c = 1; c < this.cols; c++) {
+        const x = c * (cellW + scaledBorder) - scaledBorder;
+        ctx.fillRect(x, 0, scaledBorder, h);
+      }
+      for (let r = 1; r < this.rows; r++) {
+        const y = r * (cellH + scaledBorder) - scaledBorder;
+        ctx.fillRect(0, y, w, scaledBorder);
+      }
+      ctx.restore();
+    } else {
+      // Default thin hairline dividers
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let c = 1; c < this.cols; c++) {
+        const x = Math.round(c * cellW) + 0.5;
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+      }
+      for (let r = 1; r < this.rows; r++) {
+        const y = Math.round(r * cellH) + 0.5;
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+      }
+      ctx.stroke();
+      ctx.restore();
     }
-    for (let r = 1; r < this.rows; r++) {
-      const y = Math.round(r * cellH) + 0.5;
-      ctx.moveTo(0, y);
-      ctx.lineTo(w, y);
-    }
-    ctx.stroke();
-    ctx.restore();
 
     // Selected section highlight
     if (this.selectedSectionId) {
       const sel = this.sections.find(s => s.id === this.selectedSectionId);
       if (sel) {
+        const sx = sel.col * (cellW + scaledBorder);
+        const sy = sel.row * (cellH + scaledBorder);
         ctx.save();
         ctx.strokeStyle = '#e94560';
         ctx.lineWidth = 2;
-        ctx.strokeRect(
-          sel.col * cellW + 1,
-          sel.row * cellH + 1,
-          cellW - 2,
-          cellH - 2
-        );
+        ctx.strokeRect(sx + 1, sy + 1, cellW - 2, cellH - 2);
         ctx.restore();
       }
     }

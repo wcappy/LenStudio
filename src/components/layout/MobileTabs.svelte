@@ -1,6 +1,7 @@
 <script lang="ts">
   import EffectPicker from '../settings/EffectPicker.svelte';
   import PrintSettings from '../settings/PrintSettings.svelte';
+  import BorderSettings from '../settings/BorderSettings.svelte';
   import EffectSettings from '../settings/EffectSettings.svelte';
   import LayoutPicker from './LayoutPicker.svelte';
   import SectionSelector from './SectionSelector.svelte';
@@ -42,6 +43,7 @@
       <EffectSettings />
     {:else if activeTab === 'settings'}
       <PrintSettings />
+      <BorderSettings />
     {:else if activeTab === 'export'}
       <div class="export-panel">
         <button

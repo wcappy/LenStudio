@@ -18,7 +18,8 @@
       "Bash(mkdir -p lib/types lib/stores lib/engine/effects lib/preview lib/utils)",
       "Bash(mkdir -p components/layout components/upload components/settings components/editor components/preview components/export)",
       "Bash(npx svelte-check:*)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(npm run:*)"
     ]
   }
 }

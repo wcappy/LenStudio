@@ -19,3 +19,9 @@ export interface ExportSettings {
   quality: number;
   embedDpiMetadata: boolean;
 }
+
+export interface BorderConfig {
+  enabled: boolean;
+  widthPx: number;   // 0-20, border width in output pixels
+  color: string;     // hex color e.g. '#000000'
+}

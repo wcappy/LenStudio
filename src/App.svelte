@@ -11,6 +11,7 @@
   import ImageList from './components/upload/ImageList.svelte';
   import EffectPicker from './components/settings/EffectPicker.svelte';
   import PrintSettings from './components/settings/PrintSettings.svelte';
+  import BorderSettings from './components/settings/BorderSettings.svelte';
   import EffectSettings from './components/settings/EffectSettings.svelte';
   import PreviewCanvas from './components/preview/PreviewCanvas.svelte';
 
@@ -52,6 +53,7 @@
     <ImageList />
     <EffectPicker />
     <PrintSettings />
+    <BorderSettings />
     <EffectSettings />
   </Sidebar>
 

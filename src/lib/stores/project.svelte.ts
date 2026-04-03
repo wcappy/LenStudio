@@ -1,4 +1,4 @@
-import type { LPI, DPI } from '../types/index.js';
+import type { LPI, DPI, BorderConfig } from '../types/index.js';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 export type MeasurementUnit = 'mm' | 'cm' | 'in';
@@ -66,6 +66,7 @@ class ProjectState {
   outputHeightInches = $state(6);
   themeMode = $state<ThemeMode>(loadPref('theme', 'system') as ThemeMode);
   unit = $state<MeasurementUnit>(loadPref('unit', 'mm') as MeasurementUnit);
+  border = $state<BorderConfig>({ enabled: false, widthPx: 4, color: '#000000' });
   isProcessing = $state(false);
   processProgress = $state(0);
 
@@ -108,6 +109,10 @@ class ProjectState {
   /** Set height from a value in the current display unit */
   setHeightFromDisplay(value: number) {
     this.outputHeightInches = unitToInches(value, this.unit);
+  }
+
+  setBorder(config: Partial<BorderConfig>) {
+    this.border = { ...this.border, ...config };
   }
 }
 

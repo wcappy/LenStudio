@@ -1,7 +1,7 @@
 export type { ImageFrame, CropRect, NormalizedFrame } from './image.js';
 export type {
   LPI, DPI, EffectType, ExportFormat,
-  LenticularSettings, ExportSettings
+  LenticularSettings, ExportSettings, BorderConfig
 } from './settings.js';
 export { LPI_OPTIONS, DPI_OPTIONS } from './settings.js';
 export type {
