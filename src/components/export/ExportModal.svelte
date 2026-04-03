@@ -47,7 +47,7 @@
   <div class="modal-backdrop" onclick={handleBackdropClick} role="dialog" aria-modal="true" aria-label="Export" tabindex="-1">
     <div class="modal">
       <div class="modal-header">
-        <h2>Export Lenticular Image</h2>
+        <h2>Export Image</h2>
         <button class="btn-icon" onclick={() => (open = false)} title="Close">&times;</button>
       </div>
 

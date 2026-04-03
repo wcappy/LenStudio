@@ -90,7 +90,9 @@ export class PreviewRenderer {
     const w = canvas.width;
     const h = canvas.height;
 
-    ctx.fillStyle = '#111113';
+    // Fill background — use border color if outer edge borders are enabled
+    const showOuterBorder = this.borderConfig.enabled && (this.borderConfig.outerEdge ?? false);
+    ctx.fillStyle = showOuterBorder ? this.borderConfig.color : '#111113';
     ctx.fillRect(0, 0, w, h);
 
     if (this.sections.length === 0) {
@@ -103,12 +105,19 @@ export class PreviewRenderer {
 
     // Compute scaled border
     const hasSplits = this.sections.length > 1;
-    const borderEnabled = this.borderConfig.enabled && hasSplits;
+    const outerEdge = this.borderConfig.outerEdge ?? false;
+    const borderEnabled = this.borderConfig.enabled && (hasSplits || outerEdge);
     const scale = w / this.outputWidthPx;
     const scaledBorder = borderEnabled ? this.borderConfig.widthPx * scale : 0;
+    const outerInset = this.borderConfig.enabled && outerEdge ? this.borderConfig.widthPx * scale : 0;
 
     // Compute layout from tree
-    const { cells, dividers, splitRects } = computeTreeLayout(this.root, 0, 0, w, h, scaledBorder);
+    const { cells, dividers, splitRects } = computeTreeLayout(
+      this.root,
+      outerInset, outerInset,
+      w - outerInset * 2, h - outerInset * 2,
+      scaledBorder
+    );
     this.lastCells = cells;
     this.lastDividers = dividers;
     this.lastSplitRects = splitRects;

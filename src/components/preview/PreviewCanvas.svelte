@@ -771,6 +771,12 @@
     flex-shrink: 0;
   }
 
+  @media (max-width: 768px) {
+    .workspace-toolbar {
+      display: none;
+    }
+  }
+
   .workspace-btn {
     display: flex;
     align-items: center;

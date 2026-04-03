@@ -31,7 +31,7 @@
       <line x1="14" y1="3" x2="14" y2="21" />
       <line x1="18" y1="3" x2="18" y2="21" />
     </svg>
-    <h1 class="title">Lenticular Studio</h1>
+    <h1 class="title">Tilt</h1>
   </div>
 
   <div class="header-right">
@@ -127,6 +127,12 @@
     font-size: 11px;
     color: var(--danger);
     white-space: nowrap;
+  }
+
+  @media (max-width: 768px) {
+    .export-hint {
+      display: none;
+    }
   }
 
   @media (max-width: 768px) {

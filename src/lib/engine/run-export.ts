@@ -67,11 +67,17 @@ export async function runExport(format: ExportFormat): Promise<void> {
     // Border-aware tree layout
     const { border } = projectState;
     const hasSplits = sections.length > 1;
-    const borderPx = border.enabled && hasSplits ? border.widthPx : 0;
-    const { cells } = computeTreeLayout(root, 0, 0, outputWidthPx, outputHeightPx, borderPx);
+    const borderPx = border.enabled && (hasSplits || border.outerEdge) ? border.widthPx : 0;
+    const outerInset = border.enabled && border.outerEdge ? border.widthPx : 0;
+    const { cells } = computeTreeLayout(
+      root,
+      outerInset, outerInset,
+      outputWidthPx - outerInset * 2, outputHeightPx - outerInset * 2,
+      borderPx
+    );
 
     // Fill background with border color
-    if (borderPx > 0) {
+    if (borderPx > 0 || outerInset > 0) {
       outputCtx.fillStyle = border.color;
       outputCtx.fillRect(0, 0, outputWidthPx, outputHeightPx);
     }
@@ -128,7 +134,7 @@ export async function runExport(format: ExportFormat): Promise<void> {
 
     projectState.processProgress = 100;
     const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
-    downloadBlob(blob, `lenticular-${timestamp}${info.ext}`);
+    downloadBlob(blob, `tilt-${timestamp}${info.ext}`);
   } catch (err) {
     console.error('Export failed:', err);
     alert(`Export failed: ${err instanceof Error ? err.message : String(err)}`);

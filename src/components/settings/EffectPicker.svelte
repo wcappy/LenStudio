@@ -3,7 +3,7 @@
   import { layoutStore } from '../../lib/stores/layout.svelte.js';
 
   const effects: { value: EffectType; label: string; icon: string; desc: string }[] = [
-    { value: 'none', label: 'None', icon: '—', desc: 'Static image, no lenticular effect' },
+    { value: 'none', label: 'None', icon: '—', desc: 'Static image, no tilt effect' },
     { value: 'flip', label: 'Flip', icon: '⇄', desc: 'Switch between two images as you tilt' },
     { value: 'animation', label: 'Animation', icon: '▶', desc: 'Play through a sequence of frames' },
     { value: 'depth3d', label: '3D Depth', icon: '◇', desc: 'Parallax layers create a 3D illusion' },

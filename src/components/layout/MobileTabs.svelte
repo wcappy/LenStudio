@@ -1,20 +1,19 @@
 <script lang="ts">
+  import ImageList from '../upload/ImageList.svelte';
   import EffectPicker from '../settings/EffectPicker.svelte';
   import PrintSettings from '../settings/PrintSettings.svelte';
   import BorderSettings from '../settings/BorderSettings.svelte';
   import EffectSettings from '../settings/EffectSettings.svelte';
-  import LayoutPicker from './LayoutPicker.svelte';
-  import SectionSelector from './SectionSelector.svelte';
   import ExportModal from '../export/ExportModal.svelte';
   import { layoutStore } from '../../lib/stores/layout.svelte.js';
 
   let showExport = $state(false);
 
-  type Tab = 'layout' | 'effect' | 'settings' | 'export';
-  let activeTab = $state<Tab>('layout');
+  type Tab = 'images' | 'effect' | 'settings' | 'export';
+  let activeTab = $state<Tab>('images');
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'layout', label: 'Layout' },
+    { id: 'images', label: 'Images' },
     { id: 'effect', label: 'Effect' },
     { id: 'settings', label: 'Settings' },
     { id: 'export', label: 'Export' },
@@ -35,9 +34,8 @@
   </div>
 
   <div class="tab-content">
-    {#if activeTab === 'layout'}
-      <LayoutPicker />
-      <SectionSelector />
+    {#if activeTab === 'images'}
+      <ImageList />
     {:else if activeTab === 'effect'}
       <EffectPicker />
       <EffectSettings />
@@ -54,7 +52,7 @@
           Export Image
         </button>
         {#if !layoutStore.isAllReady}
-          <p class="export-hint">Each section needs at least 2 images</p>
+          <p class="export-hint">Add images to all sections first</p>
         {/if}
       </div>
       <ExportModal bind:open={showExport} />
@@ -72,6 +70,7 @@
       display: flex;
       flex-direction: column;
       flex: 1;
+      min-height: 0;
       overflow: hidden;
     }
   }
@@ -100,6 +99,7 @@
 
   .tab-content {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
   }
 

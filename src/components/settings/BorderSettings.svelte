@@ -15,6 +15,15 @@
   </label>
 
   {#if projectState.border.enabled}
+    <label class="toggle-row">
+      <input
+        type="checkbox"
+        checked={projectState.border.outerEdge ?? false}
+        onchange={(e) => projectState.setBorder({ outerEdge: (e.target as HTMLInputElement).checked })}
+      />
+      <span class="toggle-label">Include outer edges</span>
+    </label>
+
     <div class="settings-grid">
       <div class="field">
         <label for="border-width">Width (px)</label>

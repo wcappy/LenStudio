@@ -3,6 +3,7 @@
 
   let fileInput: HTMLInputElement;
   const section = $derived(layoutStore.selectedSection);
+  const hasImages = $derived(section && section.frames.length > 0);
 
   function openFilePicker() {
     fileInput.click();
@@ -17,10 +18,10 @@
   }
 </script>
 
-<div class="mobile-strip">
-  {#if section && section.frames.length > 0}
+{#if hasImages}
+  <div class="mobile-strip">
     <div class="strip-scroll">
-      {#each section.frames as frame, i (frame.id)}
+      {#each section!.frames as frame, i (frame.id)}
         <div class="strip-thumb">
           <img src={frame.objectUrl} alt="Frame {i + 1}" />
           <span class="strip-badge">{i + 1}</span>
@@ -30,13 +31,8 @@
         <button class="strip-add" onclick={openFilePicker}>+</button>
       {/if}
     </div>
-    <p class="strip-hint">Long-press to reorder</p>
-  {:else}
-    <button class="strip-upload" onclick={openFilePicker}>
-      Upload Images (2–12)
-    </button>
-  {/if}
-</div>
+  </div>
+{/if}
 
 <input
   bind:this={fileInput}
@@ -50,9 +46,10 @@
 <style>
   .mobile-strip {
     display: none;
-    padding: 8px 12px;
+    padding: 6px 12px;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
   }
 
   @media (max-width: 768px) {
@@ -63,18 +60,17 @@
 
   .strip-scroll {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     overflow-x: auto;
-    padding-bottom: 4px;
   }
 
   .strip-thumb {
     position: relative;
-    width: 64px;
-    height: 64px;
-    border-radius: 6px;
+    width: 48px;
+    height: 48px;
+    border-radius: 4px;
     overflow: hidden;
-    border: 2px solid var(--border);
+    border: 1.5px solid var(--border);
     flex-shrink: 0;
   }
 
@@ -90,39 +86,22 @@
     left: 1px;
     background: rgba(0, 0, 0, 0.7);
     color: #fff;
-    font-size: 9px;
-    padding: 0 4px;
-    border-radius: 3px;
+    font-size: 8px;
+    padding: 0 3px;
+    border-radius: 2px;
   }
 
   .strip-add {
-    width: 64px;
-    height: 64px;
-    border: 2px dashed var(--border);
-    border-radius: 6px;
-    font-size: 24px;
+    width: 48px;
+    height: 48px;
+    border: 1.5px dashed var(--border);
+    border-radius: 4px;
+    font-size: 18px;
     color: var(--text-muted);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    cursor: pointer;
-    background: none;
-  }
-
-  .strip-hint {
-    font-size: 10px;
-    color: var(--text-muted);
-    margin-top: 4px;
-  }
-
-  .strip-upload {
-    width: 100%;
-    padding: 12px;
-    border: 2px dashed var(--border);
-    border-radius: 8px;
-    color: var(--text-muted);
-    font-size: 13px;
     cursor: pointer;
     background: none;
   }

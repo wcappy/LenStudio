@@ -126,8 +126,8 @@
     }
 
     .workspace :global(.main-area) {
-      flex: none;
-      height: 50vh;
+      flex: 1;
+      min-height: 0;
     }
   }
 </style>
