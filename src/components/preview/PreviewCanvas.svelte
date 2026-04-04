@@ -10,8 +10,6 @@
   let wrapper: HTMLDivElement;
   let renderer: PreviewRenderer | null = null;
   let viewAngle = $state(0.5);
-  let showOverlay = $state(true);
-  let showHolo = $state(false);
   let isFullscreen = $state(false);
   let gyroEnabled = $state(false);
 
@@ -80,8 +78,8 @@
 
   $effect(() => {
     if (renderer) {
-      renderer.setOverlay(showOverlay, projectState.outputWidthPx, projectState.stripWidth);
-      renderer.setHolographic(showHolo);
+      renderer.setOverlay(projectState.showOverlay, projectState.outputWidthPx, projectState.stripWidth);
+      renderer.setHolographic(projectState.showHolo);
       renderer.render(viewAngle);
     }
   });
@@ -763,49 +761,6 @@
 
     <div class="control-buttons">
       <button
-        class="btn-icon overlay-toggle"
-        class:active={showOverlay}
-        onclick={() => (showOverlay = !showOverlay)}
-        title={showOverlay ? 'Hide lens overlay' : 'Show lens overlay'}
-        aria-label={showOverlay ? 'Hide lens overlay' : 'Show lens overlay'}
-      >
-        <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5">
-          {#if showOverlay}
-            <path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" />
-            <circle cx="10" cy="10" r="3" />
-          {:else}
-            <path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" />
-            <circle cx="10" cy="10" r="3" />
-            <line x1="3" y1="17" x2="17" y2="3" />
-          {/if}
-        </svg>
-      </button>
-
-      <button
-        class="btn-icon holo-toggle"
-        class:active={showHolo}
-        onclick={() => (showHolo = !showHolo)}
-        title={showHolo ? 'Hide holographic overlay' : 'Show holographic overlay'}
-        aria-label={showHolo ? 'Hide holographic overlay' : 'Show holographic overlay'}
-      >
-        <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke-width="1.5">
-          <defs>
-            <linearGradient id="holo-grad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#ff6b6b" />
-              <stop offset="33%" stop-color="var(--success)" />
-              <stop offset="66%" stop-color="#339af0" />
-              <stop offset="100%" stop-color="#cc5de8" />
-            </linearGradient>
-          </defs>
-          <polygon points="10,1 12.5,7.5 19,7.5 13.5,12 15.5,19 10,14.5 4.5,19 6.5,12 1,7.5 7.5,7.5"
-            stroke={showHolo ? 'url(#holo-grad)' : 'currentColor'}
-            fill={showHolo ? 'url(#holo-grad)' : 'none'}
-            fill-opacity={showHolo ? 0.3 : 0}
-          />
-        </svg>
-      </button>
-
-      <button
         class="btn-icon gyro-toggle"
         class:active={gyroEnabled}
         onclick={() => gyroEnabled ? (gyroEnabled = false) : requestGyro()}
@@ -1112,16 +1067,9 @@
     flex-shrink: 0;
   }
 
-  .overlay-toggle,
-  .holo-toggle,
   .fullscreen-toggle {
     color: var(--text-muted);
     transition: color 0.15s;
-  }
-
-  .overlay-toggle.active,
-  .holo-toggle.active {
-    color: var(--accent);
   }
 
   .gyro-toggle {

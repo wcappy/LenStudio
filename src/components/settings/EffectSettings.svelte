@@ -1,5 +1,6 @@
 <script lang="ts">
   import { layoutStore } from '../../lib/stores/layout.svelte.js';
+  import { projectState } from '../../lib/stores/project.svelte.js';
   import type { EffectParams } from '../../lib/types/index.js';
 
   const section = $derived(layoutStore.selectedSection);
@@ -91,6 +92,19 @@
       <p class="effect-hint">Upload 2+ images to flip between on tilt</p>
     {/if}
   {/if}
+
+  <div class="toggle-row">
+    <label class="toggle-label">
+      <input type="checkbox" checked={projectState.showOverlay} onchange={() => (projectState.showOverlay = !projectState.showOverlay)} />
+      Lens overlay
+    </label>
+  </div>
+  <div class="toggle-row">
+    <label class="toggle-label">
+      <input type="checkbox" checked={projectState.showHolo} onchange={() => (projectState.showHolo = !projectState.showHolo)} />
+      Holographic effect
+    </label>
+  </div>
 </section>
 
 <style>
@@ -126,5 +140,22 @@
     font-size: 11px;
     color: var(--text-muted);
     line-height: 1.4;
+  }
+
+  .toggle-row {
+    margin-top: 10px;
+  }
+
+  .toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  .toggle-label input[type="checkbox"] {
+    accent-color: var(--accent);
   }
 </style>

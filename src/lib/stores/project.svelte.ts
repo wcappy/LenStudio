@@ -69,6 +69,8 @@ class ProjectState {
   border = $state<BorderConfig>({ enabled: false, widthPx: 4, color: '#000000' });
   isProcessing = $state(false);
   processProgress = $state(0);
+  showOverlay = $state(true);
+  showHolo = $state(false);
 
   outputWidthPx = $derived(Math.round(this.outputWidthInches * this.dpi));
   outputHeightPx = $derived(Math.round(this.outputHeightInches * this.dpi));
