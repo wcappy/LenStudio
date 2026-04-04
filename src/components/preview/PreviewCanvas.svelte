@@ -1099,6 +1099,7 @@
   @media (max-width: 768px) {
     .preview-wrapper {
       padding: 8px;
+      padding-bottom: 56px;
       gap: 4px;
     }
 
