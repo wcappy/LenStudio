@@ -25,5 +25,18 @@
       "Bash(npx tsc:*)",
       "Bash(node -e ':*)"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const j=JSON.parse(d);if(!j.tool_input.command.startsWith('git commit'))process.exit(0);const p=require('./package.json');const[M,m]=p.version.split('.').map(Number);p.version=M+'.'+(m+1)+'.0';require('fs').writeFileSync('package.json',JSON.stringify(p,null,2)+'\\n');console.log(JSON.stringify({hookSpecificOutput:{hookEventName:'PostToolUse',additionalContext:'Version bumped to '+p.version+'. Remember to stage and commit package.json with the version bump.'}}))})\""
+          }
+        ]
+      }
+    ]
   }
 }
