@@ -2,6 +2,7 @@
   import { projectState } from '../../lib/stores/project.svelte.js';
   import { layoutStore } from '../../lib/stores/layout.svelte.js';
   import { PreviewRenderer } from '../../lib/preview/PreviewRenderer.js';
+  import { gammaToAngle } from '../../lib/preview/tilt-detector.js';
   import type { DividerInfo, ImageTransform } from '../../lib/types/index.js';
 
   let canvas: HTMLCanvasElement;
@@ -12,6 +13,7 @@
   let showOverlay = $state(true);
   let showHolo = $state(false);
   let isFullscreen = $state(false);
+  let gyroEnabled = $state(false);
 
   // Layout mode drag state
   let dragging: DividerInfo | null = $state(null);
@@ -135,6 +137,34 @@
     document.addEventListener('fullscreenchange', handler);
     return () => document.removeEventListener('fullscreenchange', handler);
   });
+
+  // Gyroscope tilt in fullscreen mode
+  $effect(() => {
+    if (!isFullscreen || !gyroEnabled) return;
+
+    const handleOrientation = (e: DeviceOrientationEvent) => {
+      if (e.gamma == null) return;
+      viewAngle = gammaToAngle(e.gamma);
+      renderer?.render(viewAngle);
+    };
+
+    window.addEventListener('deviceorientation', handleOrientation);
+    return () => window.removeEventListener('deviceorientation', handleOrientation);
+  });
+
+  async function requestGyro() {
+    // iOS 13+ requires permission
+    const DOE = DeviceOrientationEvent as any;
+    if (typeof DOE.requestPermission === 'function') {
+      try {
+        const perm = await DOE.requestPermission();
+        if (perm !== 'granted') return;
+      } catch {
+        return;
+      }
+    }
+    gyroEnabled = true;
+  }
 
   function handleResize() {
     if (!container || !renderer) return;
@@ -731,6 +761,23 @@
       </button>
 
       <button
+        class="btn-icon gyro-toggle"
+        class:active={gyroEnabled}
+        onclick={() => gyroEnabled ? (gyroEnabled = false) : requestGyro()}
+        title={gyroEnabled ? 'Disable tilt control' : 'Enable tilt control'}
+        aria-label={gyroEnabled ? 'Disable tilt control' : 'Enable tilt control'}
+      >
+        <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="5" y="2" width="10" height="16" rx="2" />
+          <circle cx="10" cy="14" r="1" />
+          {#if gyroEnabled}
+            <path d="M3 8 L5 10 L3 12" />
+            <path d="M17 8 L15 10 L17 12" />
+          {/if}
+        </svg>
+      </button>
+
+      <button
         class="btn-icon fullscreen-toggle"
         onclick={toggleFullscreen}
         title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
@@ -752,6 +799,17 @@
       </button>
     </div>
   </div>
+
+  {#if isFullscreen && !gyroEnabled}
+    <button class="gyro-prompt" onclick={requestGyro}>
+      <svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="5" y="2" width="10" height="16" rx="2" />
+        <path d="M3 8 L5 10 L3 12" />
+        <path d="M17 8 L15 10 L17 12" />
+      </svg>
+      Tilt phone to view effect
+    </button>
+  {/if}
 </div>
 
 <style>
@@ -773,7 +831,15 @@
 
   @media (max-width: 768px) {
     .workspace-toolbar {
-      display: none;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .workspace-btn {
+      flex: 1;
+      justify-content: center;
+      font-size: 11px;
+      padding: 6px 8px;
     }
   }
 
@@ -987,8 +1053,47 @@
     color: var(--accent);
   }
 
-  .fullscreen-toggle:hover {
+  .gyro-toggle {
+    color: var(--text-muted);
+    transition: color 0.15s;
+  }
+
+  .gyro-toggle.active {
+    color: var(--accent);
+  }
+
+  .fullscreen-toggle:hover,
+  .gyro-toggle:hover {
     color: var(--text);
+  }
+
+  .gyro-prompt {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    animation: gyro-pulse 2s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes gyro-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  /* Hide gyro prompt on desktop (no gyroscope) */
+  @media (hover: hover) and (pointer: fine) {
+    .gyro-prompt {
+      display: none;
+    }
+    .gyro-toggle {
+      display: none;
+    }
   }
 
   @media (max-width: 768px) {
