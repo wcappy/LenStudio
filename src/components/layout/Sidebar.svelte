@@ -20,7 +20,7 @@
     gap: 0;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 640px) {
     .sidebar {
       display: none;
     }

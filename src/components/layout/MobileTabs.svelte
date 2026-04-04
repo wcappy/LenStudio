@@ -13,12 +13,7 @@
   type Tab = 'images' | 'effect' | 'settings' | 'export';
   let activeTab = $state<Tab | null>(null);
 
-  const tabs: { id: Tab; label: string; icon: string }[] = [
-    { id: 'images', label: 'Images', icon: '🖼' },
-    { id: 'effect', label: 'Effect', icon: '✦' },
-    { id: 'settings', label: 'Settings', icon: '⚙' },
-    { id: 'export', label: 'Export', icon: '↗' },
-  ];
+  const tabs: Tab[] = ['images', 'effect', 'settings', 'export'];
 
   const drawerOpen = $derived(activeTab !== null);
 
@@ -29,6 +24,16 @@
   function closeDrawer() {
     activeTab = null;
   }
+
+  // Swipe-to-dismiss
+  let touchStartY = 0;
+  function handleDrawerTouchStart(e: TouchEvent) {
+    touchStartY = e.touches[0].clientY;
+  }
+  function handleDrawerTouchEnd(e: TouchEvent) {
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (dy > 60) closeDrawer();
+  }
 </script>
 
 <div class="mobile-tabs" class:open={drawerOpen}>
@@ -38,7 +43,12 @@
     <div class="drawer-backdrop" onclick={closeDrawer}></div>
   {/if}
 
-  <div class="drawer-panel" class:open={drawerOpen}>
+  <div
+    class="drawer-panel"
+    class:open={drawerOpen}
+    ontouchstart={handleDrawerTouchStart}
+    ontouchend={handleDrawerTouchEnd}
+  >
     <div class="drawer-handle-bar">
       <div class="drawer-handle"></div>
     </div>
@@ -74,11 +84,35 @@
     {#each tabs as tab}
       <button
         class="tab-btn"
-        class:active={activeTab === tab.id}
-        onclick={() => handleTabClick(tab.id)}
+        class:active={activeTab === tab}
+        onclick={() => handleTabClick(tab)}
       >
-        <span class="tab-icon">{tab.icon}</span>
-        <span class="tab-label">{tab.label}</span>
+        <span class="tab-icon">
+          {#if tab === 'images'}
+            <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="2" y="2" width="16" height="16" rx="2" />
+              <polyline points="2 13 6 9 10 13" />
+              <polyline points="9 11 13 7 18 12" />
+              <circle cx="13" cy="6" r="1.5" />
+            </svg>
+          {:else if tab === 'effect'}
+            <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M10 2 L12 8 L18 8 L13 12 L15 18 L10 14 L5 18 L7 12 L2 8 L8 8 Z" />
+            </svg>
+          {:else if tab === 'settings'}
+            <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="10" cy="10" r="3" />
+              <path d="M10 1v2M10 17v2M1 10h2M17 10h2M3.5 3.5l1.4 1.4M15.1 15.1l1.4 1.4M3.5 16.5l1.4-1.4M15.1 4.9l1.4-1.4" />
+            </svg>
+          {:else if tab === 'export'}
+            <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M6 10 L10 3 L14 10" />
+              <line x1="10" y1="3" x2="10" y2="14" />
+              <path d="M3 13v3a1 1 0 001 1h12a1 1 0 001-1v-3" />
+            </svg>
+          {/if}
+        </span>
+        <span class="tab-label">{tab[0].toUpperCase() + tab.slice(1)}</span>
       </button>
     {/each}
   </div>
@@ -89,7 +123,7 @@
     display: none;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 640px) {
     .mobile-tabs {
       display: flex;
       flex-direction: column;
@@ -114,22 +148,23 @@
   }
 
   .drawer-panel {
-    max-height: 0;
-    overflow: hidden;
     background: var(--surface);
     border-top: 1px solid var(--border);
     border-radius: 14px 14px 0 0;
-    transition: max-height 0.25s ease;
+    transform: translateY(100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 45vh;
+    overflow: hidden;
   }
 
   .drawer-panel.open {
-    max-height: 45vh;
+    transform: translateY(0);
   }
 
   .drawer-handle-bar {
     display: flex;
     justify-content: center;
-    padding: 6px 0 2px;
+    padding: 8px 0 4px;
   }
 
   .drawer-handle {
@@ -158,7 +193,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1px;
+    gap: 2px;
     padding: 6px 4px 5px;
     font-size: 10px;
     font-weight: 500;
@@ -167,8 +202,10 @@
   }
 
   .tab-icon {
-    font-size: 16px;
-    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 20px;
   }
 
   .tab-label {

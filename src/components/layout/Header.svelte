@@ -16,7 +16,7 @@
     if (projectState.isProcessing) return 'Export in progress...';
     if (layoutStore.sections.length === 0) return 'No sections to export';
     const empty = layoutStore.sections.filter(s => s.frames.length === 0);
-    if (empty.length > 0) return `${empty.length} section${empty.length > 1 ? 's' : ''} need images`;
+    if (empty.length > 0) return `${empty.length} section${empty.length > 1 ? 's need' : ' needs'} images`;
     if (!layoutStore.isAllReady) return 'Some sections need more images';
     return '';
   });
@@ -33,6 +33,10 @@
     </svg>
     <h1 class="title">Tilt</h1>
   </div>
+
+  {#if exportDisabledReason}
+    <span class="header-status">{exportDisabledReason}</span>
+  {/if}
 
   <div class="header-right">
     <button class="btn-ghost new-btn" onclick={() => (showNewProject = true)}>
@@ -62,9 +66,6 @@
           Export
         {/if}
       </button>
-      {#if exportDisabledReason}
-        <span class="export-hint">{exportDisabledReason}</span>
-      {/if}
     </div>
   </div>
 </header>
@@ -115,29 +116,29 @@
     font-size: 16px;
   }
 
-  .export-wrapper {
-    position: relative;
-  }
-
-  .export-hint {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    margin-top: 4px;
-    font-size: 11px;
+  .header-status {
+    font-size: 12px;
     color: var(--danger);
     white-space: nowrap;
+    opacity: 0.8;
   }
 
-  @media (max-width: 768px) {
-    .export-hint {
-      display: none;
+  @media (max-width: 640px) {
+    .header {
+      height: 40px;
+      padding: 0 10px;
     }
-  }
 
-  @media (max-width: 768px) {
     .title {
       font-size: 14px;
+    }
+
+    .new-btn {
+      display: none;
+    }
+
+    .header-status {
+      display: none;
     }
   }
 </style>

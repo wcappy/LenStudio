@@ -34,7 +34,7 @@
     flex-shrink: 0;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 640px) {
     .status-bar {
       display: none;
     }

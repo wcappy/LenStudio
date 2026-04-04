@@ -44,6 +44,7 @@ class LayoutStore {
   selectedId = $state<string | null>(null);
   layoutMode = $state(false);
   imageMode = $state(false);
+  isLoadingFrames = $state(false);
 
   /** Flat list of all leaf sections (backward compat) */
   sections = $derived(getLeaves(this.root));
@@ -179,25 +180,30 @@ class LayoutStore {
     const slotsAvailable = MAX_FRAMES_PER_SECTION - section.frames.length;
     const toAdd = imageFiles.slice(0, slotsAvailable);
 
-    const newFrames: ImageFrame[] = [];
-    for (const file of toAdd) {
-      const objectUrl = URL.createObjectURL(file);
-      const bitmap = await createImageBitmap(file);
-      newFrames.push({
-        id: crypto.randomUUID(),
-        file,
-        objectUrl,
-        bitmap,
-        order: section.frames.length + newFrames.length,
-        width: bitmap.width,
-        height: bitmap.height,
-      });
-    }
+    this.isLoadingFrames = true;
+    try {
+      const newFrames: ImageFrame[] = [];
+      for (const file of toAdd) {
+        const objectUrl = URL.createObjectURL(file);
+        const bitmap = await createImageBitmap(file);
+        newFrames.push({
+          id: crypto.randomUUID(),
+          file,
+          objectUrl,
+          bitmap,
+          order: section.frames.length + newFrames.length,
+          width: bitmap.width,
+          height: bitmap.height,
+        });
+      }
 
-    this.root = updateLeaf(this.root, sectionId, leaf => ({
-      ...leaf,
-      frames: [...leaf.frames, ...newFrames],
-    }));
+      this.root = updateLeaf(this.root, sectionId, leaf => ({
+        ...leaf,
+        frames: [...leaf.frames, ...newFrames],
+      }));
+    } finally {
+      this.isLoadingFrames = false;
+    }
   }
 
   removeFrame(sectionId: string, frameId: string) {

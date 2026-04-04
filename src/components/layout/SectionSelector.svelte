@@ -59,7 +59,7 @@
     overflow: hidden;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 640px) {
     .grid-preview {
       max-width: 160px;
     }

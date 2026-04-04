@@ -114,7 +114,16 @@
     border-left: 1px solid var(--border);
   }
 
-  @media (max-width: 768px) {
+  /* Compact sidebars for narrow desktop / landscape / tablet */
+  @media (max-width: 900px) {
+    .panel-left,
+    .panel-right {
+      width: 180px;
+    }
+  }
+
+  /* Mobile: single column */
+  @media (max-width: 640px) {
     .workspace {
       flex-direction: column;
     }

@@ -538,7 +538,7 @@
 <svelte:window onresize={handleResize} onmouseup={handleMouseUp} />
 
 <div class="preview-wrapper" class:fullscreen={isFullscreen} bind:this={wrapper}>
-  <div class="workspace-toolbar">
+  <div class="workspace-toolbar" class:has-images={hasAnyImages}>
     <button
       class="workspace-btn"
       class:active={layoutStore.layoutMode}
@@ -595,10 +595,23 @@
       hidden
       onchange={handleMobileFileSelect}
     />
-    {#if !hasAnyImages}
+    {#if layoutStore.isLoadingFrames}
       <div class="canvas-empty-hint">
+        <div class="loading-spinner"></div>
+        <p>Loading images...</p>
+      </div>
+    {:else if !hasAnyImages}
+      <div class="canvas-empty-hint">
+        <svg class="empty-icon" viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4">
+          <rect x="4" y="6" width="40" height="36" rx="4" />
+          <line x1="12" y1="6" x2="12" y2="42" opacity="0.3" />
+          <line x1="20" y1="6" x2="20" y2="42" opacity="0.3" />
+          <line x1="28" y1="6" x2="28" y2="42" opacity="0.3" />
+          <line x1="36" y1="6" x2="36" y2="42" opacity="0.3" />
+        </svg>
         <p>Upload images to get started</p>
-        <p class="canvas-empty-sub desktop-hint">Add 2-12 images per section from the sidebar</p>
+        <p class="canvas-empty-sub">Add 2-12 photos and tilt to see the lenticular effect</p>
+        <p class="canvas-empty-sub desktop-hint">Drag images into the sidebar or click to upload</p>
         <p class="canvas-empty-sub mobile-hint">Tap here to add photos</p>
       </div>
     {/if}
@@ -861,8 +874,13 @@
     flex-shrink: 0;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 640px) {
     .workspace-toolbar {
+      display: none;
+    }
+
+    .workspace-toolbar.has-images {
+      display: flex;
       width: 100%;
       justify-content: center;
     }
@@ -933,12 +951,33 @@
     text-align: center;
     pointer-events: none;
     color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .empty-icon {
+    margin-bottom: 4px;
+  }
+
+  .loading-spinner {
+    width: 28px;
+    height: 28px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 
   .canvas-empty-hint p {
     font-size: 14px;
     font-weight: 500;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
   }
 
   .canvas-empty-sub {
@@ -950,7 +989,7 @@
     display: none;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 640px) {
     .desktop-hint {
       display: none;
     }
@@ -1128,7 +1167,7 @@
     }
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 640px) {
     .preview-wrapper {
       padding: 8px;
       padding-bottom: 56px;
@@ -1147,6 +1186,10 @@
     .preview-controls {
       padding: 6px 10px;
       gap: 8px;
+    }
+
+    .scrub-bar {
+      height: 20px;
     }
   }
 </style>
