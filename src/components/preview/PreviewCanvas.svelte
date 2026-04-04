@@ -25,6 +25,9 @@
 
   let canvasCursor = $state('default');
   let dragTarget = $state<string | null>(null);
+  let mobileFileInput: HTMLInputElement;
+  let tapTargetCell: string | null = null;
+  const isMobile = typeof window !== 'undefined' && 'ontouchstart' in window;
 
   const hasSplits = $derived(layoutStore.sectionCount > 1);
   const hasAnyImages = $derived(layoutStore.sections.some(s => s.frames.length > 0));
@@ -419,6 +422,26 @@
     lastPinchDist = null;
   }
 
+  // Mobile: tap cell to add images
+  function handleCanvasTap(e: MouseEvent) {
+    if (!isMobile || layoutStore.layoutMode || layoutStore.imageMode) return;
+    const pos = canvasCoords(e);
+    const cellId = hitTestCell(pos.x, pos.y);
+    if (!cellId || !layoutStore.canAddFrames(cellId)) return;
+    tapTargetCell = cellId;
+    layoutStore.selectSection(cellId);
+    mobileFileInput.click();
+  }
+
+  function handleMobileFileSelect(e: Event) {
+    const input = e.target as HTMLInputElement;
+    if (input.files?.length && tapTargetCell) {
+      layoutStore.addFrames(tapTargetCell, input.files);
+      input.value = '';
+    }
+    tapTargetCell = null;
+  }
+
   // --- Drag & drop handlers ---
   function isSectionFull(cellId: string): boolean {
     return !layoutStore.canAddFrames(cellId);
@@ -559,15 +582,24 @@
       ontouchstart={handleTouchStart}
       ontouchmove={handleTouchMove}
       ontouchend={handleTouchEnd}
+      onclick={handleCanvasTap}
       ondragover={handleCanvasDragOver}
       ondragleave={handleCanvasDragLeave}
       ondrop={handleCanvasDrop}
     ></canvas>
+    <input
+      bind:this={mobileFileInput}
+      type="file"
+      accept="image/jpeg,image/png,image/webp"
+      multiple
+      hidden
+      onchange={handleMobileFileSelect}
+    />
     {#if !hasAnyImages}
       <div class="canvas-empty-hint">
         <p>Upload images to get started</p>
         <p class="canvas-empty-sub desktop-hint">Add 2-12 images per section from the sidebar</p>
-        <p class="canvas-empty-sub mobile-hint">Tap "Upload Images" below to add photos</p>
+        <p class="canvas-empty-sub mobile-hint">Tap here to add photos</p>
       </div>
     {/if}
   </div>
