@@ -3,7 +3,6 @@
   import Header from './components/layout/Header.svelte';
   import MainArea from './components/layout/MainArea.svelte';
   import StatusBar from './components/layout/StatusBar.svelte';
-  import MobileImageStrip from './components/layout/MobileImageStrip.svelte';
   import MobileTabs from './components/layout/MobileTabs.svelte';
   import SectionSelector from './components/layout/SectionSelector.svelte';
   import ImageList from './components/upload/ImageList.svelte';
@@ -75,8 +74,7 @@
   </div>
 {/if}
 
-<!-- Mobile: image strip + tabbed controls (hidden on desktop) -->
-<MobileImageStrip />
+<!-- Mobile: tabbed drawer (hidden on desktop) -->
 <MobileTabs />
 
 <StatusBar />

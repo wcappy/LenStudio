@@ -36,12 +36,6 @@
 
   @media (max-width: 768px) {
     .status-bar {
-      height: 24px;
-      font-size: 11px;
-      justify-content: center;
-    }
-
-    .status-right {
       display: none;
     }
   }

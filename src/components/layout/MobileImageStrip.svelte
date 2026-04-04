@@ -45,17 +45,9 @@
 
 <style>
   .mobile-strip {
-    display: none;
     padding: 6px 12px;
-    background: var(--surface);
     border-bottom: 1px solid var(--border);
     flex-shrink: 0;
-  }
-
-  @media (max-width: 768px) {
-    .mobile-strip {
-      display: block;
-    }
   }
 
   .strip-scroll {
