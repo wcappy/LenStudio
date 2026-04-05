@@ -354,7 +354,10 @@ export async function exportProjectFile(
       const blob = await frameToBlob(frame);
       if (blob.size > 0) {
         const buf = await blob.arrayBuffer();
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+        const bytes = new Uint8Array(buf);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        const base64 = btoa(binary);
         dataUrls.set(frame.id, `data:${blob.type || 'image/png'};base64,${base64}`);
       }
     }
