@@ -876,12 +876,14 @@
           {#each layoutStore.selectedSection.frames as frame, i}
             {@const n = layoutStore.selectedSection.frames.length}
             {@const pos = n > 1 ? (i / (n - 1)) * 100 : 50}
+            <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
             <img
               src={frame.objectUrl}
               alt="Frame {i + 1}"
               class="timeline-thumb"
               class:active={currentFrame?.id === frame.id}
               style="left: {pos}%;"
+              onclick={() => { viewAngle = n > 1 ? i / (n - 1) : 0.5; renderer?.render(viewAngle); if (isPlaying) togglePlay(); }}
             />
           {/each}
         </div>
@@ -1247,10 +1249,11 @@
     left: 8px;
     right: 8px;
     height: 0;
-    pointer-events: none;
   }
 
   .timeline-thumb {
+    pointer-events: auto;
+    cursor: pointer;
     position: absolute;
     width: 20px;
     height: 20px;
@@ -1259,7 +1262,12 @@
     border: 1.5px solid var(--border);
     transform: translate(-50%, -50%);
     opacity: 0.6;
-    transition: opacity 0.15s, border-color 0.15s;
+    transition: opacity 0.15s, border-color 0.15s, transform 0.1s;
+  }
+
+  .timeline-thumb:hover {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.2);
   }
 
   .timeline-thumb.active {
