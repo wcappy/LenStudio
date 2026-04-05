@@ -870,16 +870,33 @@
   {/if}
 
   <div class="preview-controls">
-    <input
-      class="scrub-bar"
-      type="range"
-      min="0"
-      max="1"
-      step="0.002"
-      value={viewAngle}
-      oninput={handleScrub}
-      title="Scrub through animation"
-    />
+    <div class="timeline-wrapper">
+      {#if layoutStore.selectedSection && layoutStore.selectedSection.frames.length > 1}
+        <div class="timeline-thumbs">
+          {#each layoutStore.selectedSection.frames as frame, i}
+            {@const n = layoutStore.selectedSection.frames.length}
+            {@const pos = n > 1 ? (i / (n - 1)) * 100 : 50}
+            <img
+              src={frame.objectUrl}
+              alt="Frame {i + 1}"
+              class="timeline-thumb"
+              class:active={currentFrame?.id === frame.id}
+              style="left: {pos}%;"
+            />
+          {/each}
+        </div>
+      {/if}
+      <input
+        class="scrub-bar"
+        type="range"
+        min="0"
+        max="1"
+        step="0.002"
+        value={viewAngle}
+        oninput={handleScrub}
+        title="Scrub through animation"
+      />
+    </div>
 
     <div class="control-buttons">
       <button
@@ -1217,11 +1234,47 @@
     max-width: 600px;
   }
 
+  .timeline-wrapper {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .timeline-thumbs {
+    position: absolute;
+    top: -12px;
+    left: 8px;
+    right: 8px;
+    height: 0;
+    pointer-events: none;
+  }
+
+  .timeline-thumb {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    object-fit: cover;
+    border-radius: 3px;
+    border: 1.5px solid var(--border);
+    transform: translate(-50%, -50%);
+    opacity: 0.6;
+    transition: opacity 0.15s, border-color 0.15s;
+  }
+
+  .timeline-thumb.active {
+    opacity: 1;
+    border-color: var(--accent);
+    z-index: 1;
+  }
+
   .scrub-bar {
     flex: 1;
     cursor: pointer;
     accent-color: var(--accent);
     height: 6px;
+    position: relative;
+    z-index: 2;
   }
 
   .control-buttons {
