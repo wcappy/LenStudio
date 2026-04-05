@@ -21,23 +21,28 @@
   let view = $state<View>('editor');
   let restored = false;
 
+  function getSettings() {
+    return {
+      lpi: projectState.lpi,
+      dpi: projectState.dpi,
+      outputWidthInches: projectState.outputWidthInches,
+      outputHeightInches: projectState.outputHeightInches,
+      border: projectState.border,
+    };
+  }
+
   // Auto-save: trigger on any tree/settings change
   $effect(() => {
-    const _root = layoutStore.root;
+    // Deep-track sections and their frame counts to detect adds/removes
+    const _sections = layoutStore.sections.map(s => s.id + ':' + s.frames.length + ':' + s.effectType);
     const _lpi = projectState.lpi;
     const _dpi = projectState.dpi;
     const _w = projectState.outputWidthInches;
     const _h = projectState.outputHeightInches;
-    const _border = projectState.border;
+    const _border = JSON.stringify(projectState.border);
 
     if (restored) {
-      layoutStore.triggerAutoSave({
-        lpi: projectState.lpi,
-        dpi: projectState.dpi,
-        outputWidthInches: projectState.outputWidthInches,
-        outputHeightInches: projectState.outputHeightInches,
-        border: projectState.border,
-      });
+      layoutStore.triggerAutoSave(getSettings());
     }
   });
 

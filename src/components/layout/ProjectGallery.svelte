@@ -1,7 +1,7 @@
 <script lang="ts">
   import { layoutStore } from '../../lib/stores/layout.svelte.js';
   import { projectState } from '../../lib/stores/project.svelte.js';
-  import { listProjects, loadProject, deleteProject, type ProjectMeta } from '../../lib/stores/persistence.js';
+  import { listProjects, loadProject, deleteProject, saveProject, type ProjectMeta } from '../../lib/stores/persistence.js';
   import type { LayoutPreset } from '../../lib/types/index.js';
 
   let { onopen, onnew }: { onopen: () => void; onnew: () => void } = $props();
@@ -41,6 +41,20 @@
     await refresh();
   }
 
+  let saving = $state(false);
+  async function handleSaveCurrent() {
+    saving = true;
+    await saveProject(layoutStore.projectId, layoutStore.projectName, layoutStore.root, layoutStore.preset, {
+      lpi: projectState.lpi,
+      dpi: projectState.dpi,
+      outputWidthInches: projectState.outputWidthInches,
+      outputHeightInches: projectState.outputHeightInches,
+      border: projectState.border,
+    });
+    await refresh();
+    saving = false;
+  }
+
   function formatDate(iso: string): string {
     const d = new Date(iso);
     const now = new Date();
@@ -57,6 +71,9 @@
   <div class="gallery-header">
     <h2 class="gallery-title">My Projects</h2>
     <div class="gallery-actions">
+      <button class="btn-ghost save-current" onclick={handleSaveCurrent} disabled={saving}>
+        {saving ? 'Saving...' : 'Save Current'}
+      </button>
       <button class="btn-primary" onclick={onnew}>
         + New Project
       </button>
@@ -150,12 +167,17 @@
     align-items: center;
   }
 
-  .gallery-actions .btn-ghost {
+  .gallery-actions .btn-ghost,
+  .save-current {
     display: flex;
     align-items: center;
     gap: 5px;
     font-size: 12px;
     font-weight: 600;
+  }
+
+  .save-current:disabled {
+    opacity: 0.5;
   }
 
   .gallery-empty {
