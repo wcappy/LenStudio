@@ -12,8 +12,52 @@
   import EffectSettings from './components/settings/EffectSettings.svelte';
   import PreviewCanvas from './components/preview/PreviewCanvas.svelte';
   import NewProjectModal from './components/layout/NewProjectModal.svelte';
+  import { layoutStore } from './lib/stores/layout.svelte.js';
+  import { hasAutoSave, loadAutoSave } from './lib/stores/persistence.js';
 
   let showNewProject = $state(false);
+  let restored = false;
+
+  // Auto-save: trigger on any tree/settings change
+  $effect(() => {
+    // Track reactive deps
+    const _root = layoutStore.root;
+    const _lpi = projectState.lpi;
+    const _dpi = projectState.dpi;
+    const _w = projectState.outputWidthInches;
+    const _h = projectState.outputHeightInches;
+    const _border = projectState.border;
+
+    if (restored) {
+      layoutStore.triggerAutoSave({
+        lpi: projectState.lpi,
+        dpi: projectState.dpi,
+        outputWidthInches: projectState.outputWidthInches,
+        outputHeightInches: projectState.outputHeightInches,
+        border: projectState.border,
+      });
+    }
+  });
+
+  // Restore auto-save on startup (runs once)
+  hasAutoSave().then(async (has) => {
+    if (has) {
+      const result = await loadAutoSave();
+      if (result) {
+        layoutStore.loadFromProject(
+          result.root,
+          result.data.preset as any,
+          result.data.name
+        );
+        projectState.lpi = result.data.settings.lpi;
+        projectState.dpi = result.data.settings.dpi;
+        projectState.outputWidthInches = result.data.settings.outputWidthInches;
+        projectState.outputHeightInches = result.data.settings.outputHeightInches;
+        if (result.data.settings.border) projectState.border = result.data.settings.border;
+      }
+    }
+    restored = true;
+  });
 
   // Listen for system theme changes
   $effect(() => {
@@ -39,9 +83,19 @@
   function handleGlobalDragOver(e: DragEvent) {
     e.preventDefault();
   }
+
+  function handleKeydown(e: KeyboardEvent) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      layoutStore.undo();
+    } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+      e.preventDefault();
+      layoutStore.redo();
+    }
+  }
 </script>
 
-<svelte:window ondrop={handleGlobalDrop} ondragover={handleGlobalDragOver} />
+<svelte:window ondrop={handleGlobalDrop} ondragover={handleGlobalDragOver} onkeydown={handleKeydown} />
 
 <Header bind:showNewProject />
 

@@ -8,6 +8,8 @@ import {
   splitLeaf, removeLeaf, updateSplitRatio, updateLeaf,
   leafCount, resetAllRatios
 } from '../utils/layout-tree.js';
+import { historyStore } from './history.svelte.js';
+import { autoSave, loadAutoSave, type ProjectData } from './persistence.js';
 
 const MAX_FRAMES_PER_SECTION = 12;
 const MIN_FRAMES_PER_SECTION = 2;
@@ -71,7 +73,28 @@ class LayoutStore {
     }
   }
 
+  private saveHistory() {
+    historyStore.push(this.root, this.selectedId);
+  }
+
+  undo() {
+    const snapshot = historyStore.undo(this.root, this.selectedId);
+    if (snapshot) {
+      this.root = snapshot.root;
+      this.selectedId = snapshot.selectedId;
+    }
+  }
+
+  redo() {
+    const snapshot = historyStore.redo(this.root, this.selectedId);
+    if (snapshot) {
+      this.root = snapshot.root;
+      this.selectedId = snapshot.selectedId;
+    }
+  }
+
   setPreset(preset: LayoutPreset) {
+    this.saveHistory();
     this.cleanupFrames();
     this.preset = preset;
     this.root = presetToTree(preset.cols, preset.rows);
@@ -103,6 +126,7 @@ class LayoutStore {
   }
 
   resetFrameTransforms(sectionId: string) {
+    this.saveHistory();
     this.root = updateLeaf(this.root, sectionId, leaf => ({
       ...leaf,
       frames: leaf.frames.map(f => {
@@ -115,6 +139,7 @@ class LayoutStore {
   // --- Tree mutations ---
 
   splitSection(id: string, direction: SplitDirection) {
+    this.saveHistory();
     const leavesBefore = new Set(getLeaves(this.root).map(l => l.id));
     this.root = splitLeaf(this.root, id, direction);
     const leavesAfter = getLeaves(this.root);
@@ -125,6 +150,7 @@ class LayoutStore {
   }
 
   splitIntoQuarters(id: string) {
+    this.saveHistory();
     const leavesBefore = new Set(getLeaves(this.root).map(l => l.id));
     this.root = splitLeaf(this.root, id, 'vertical');
     // Find the two new leaves from the vertical split
@@ -140,6 +166,7 @@ class LayoutStore {
 
   removeSection(id: string) {
     if (leafCount(this.root) <= 1) return;
+    this.saveHistory();
 
     // Clean up frames of the removed leaf
     const leaf = findLeaf(this.root, id);
@@ -207,6 +234,7 @@ class LayoutStore {
   }
 
   removeFrame(sectionId: string, frameId: string) {
+    this.saveHistory();
     const section = findLeaf(this.root, sectionId);
     if (!section) return;
 
@@ -226,6 +254,7 @@ class LayoutStore {
 
   reorderFrame(sectionId: string, fromIndex: number, toIndex: number) {
     if (fromIndex === toIndex) return;
+    this.saveHistory();
     this.root = updateLeaf(this.root, sectionId, leaf => {
       const updated = [...leaf.frames];
       const [moved] = updated.splice(fromIndex, 1);
@@ -235,6 +264,7 @@ class LayoutStore {
   }
 
   setSectionEffect(sectionId: string, effectType: EffectType) {
+    this.saveHistory();
     this.root = updateLeaf(this.root, sectionId, leaf => ({
       ...leaf,
       effectType,
@@ -285,6 +315,38 @@ class LayoutStore {
   }
 
   // --- Custom grid (preset-based) ---
+
+  projectName = $state('Untitled');
+  private autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+  triggerAutoSave(settings: ProjectData['settings']) {
+    if (this.autoSaveTimer) clearTimeout(this.autoSaveTimer);
+    this.autoSaveTimer = setTimeout(() => {
+      autoSave(this.root, this.preset, settings).catch(() => {});
+    }, 2000);
+  }
+
+  async restoreAutoSave(): Promise<boolean> {
+    const result = await loadAutoSave();
+    if (!result) return false;
+    this.root = result.root;
+    this.preset = result.data.preset as LayoutPreset;
+    this.projectName = result.data.name;
+    const leaves = getLeaves(this.root);
+    this.selectedId = leaves[0]?.id ?? null;
+    historyStore.clear();
+    return true;
+  }
+
+  loadFromProject(root: LayoutNode, preset: LayoutPreset, name: string) {
+    this.cleanupFrames();
+    this.root = root;
+    this.preset = preset;
+    this.projectName = name;
+    const leaves = getLeaves(this.root);
+    this.selectedId = leaves[0]?.id ?? null;
+    historyStore.clear();
+  }
 
   customCols = $state(2);
   customRows = $state(2);

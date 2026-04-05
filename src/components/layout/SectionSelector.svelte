@@ -30,12 +30,12 @@
           class:selected={layoutStore.selectedId === section.id}
           class:has-frames={section.frames.length > 0}
           onclick={() => layoutStore.selectSection(section.id)}
-          title="{section.effectType} ({section.frames.length} images)"
+          title="{section.effectType} ({section.frames.length}/12 frames)"
           style="left: {rect.x}px; top: {rect.y}px; width: {rect.w}px; height: {rect.h}px;"
         >
           {#if section.frames.length > 0 && section.frames[0].objectUrl}
             <img src={section.frames[0].objectUrl} alt="" class="cell-thumb" />
-            <span class="cell-badge">{section.frames.length}</span>
+            <span class="cell-badge">{section.frames.length}/12</span>
           {:else}
             <span class="cell-empty">+</span>
           {/if}

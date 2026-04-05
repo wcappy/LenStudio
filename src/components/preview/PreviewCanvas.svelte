@@ -420,11 +420,31 @@
     lastPinchDist = null;
   }
 
-  // Mobile: tap cell to add images
+  // Canvas click: zoom center picker or mobile tap-to-upload
   function handleCanvasTap(e: MouseEvent) {
-    if (!isMobile || layoutStore.layoutMode || layoutStore.imageMode) return;
     const pos = canvasCoords(e);
     const cellId = hitTestCell(pos.x, pos.y);
+
+    // Zoom center picker: click to set center point
+    if (cellId && !layoutStore.layoutMode && !layoutStore.imageMode) {
+      const section = layoutStore.sections.find(s => s.id === cellId);
+      if (section?.effectType === 'zoom' && section.effectParams?.type === 'zoom') {
+        const cellRect = renderer?.getCells().get(cellId);
+        if (cellRect) {
+          const cx = (pos.x - cellRect.x) / cellRect.w;
+          const cy = (pos.y - cellRect.y) / cellRect.h;
+          layoutStore.setSectionEffectParams(cellId, {
+            ...section.effectParams,
+            centerX: Math.max(0, Math.min(1, cx)),
+            centerY: Math.max(0, Math.min(1, cy)),
+          });
+          return;
+        }
+      }
+    }
+
+    // Mobile: tap cell to upload images
+    if (!isMobile || layoutStore.layoutMode || layoutStore.imageMode) return;
     if (!cellId || !layoutStore.canAddFrames(cellId)) return;
     tapTargetCell = cellId;
     layoutStore.selectSection(cellId);
@@ -531,9 +551,58 @@
       canvasCursor = 'default';
     }
   });
+
+  // Animation playback state
+  let isPlaying = $state(false);
+  let playTimer: ReturnType<typeof setInterval> | null = null;
+
+  function togglePlay() {
+    if (isPlaying) {
+      if (playTimer) clearInterval(playTimer);
+      playTimer = null;
+      isPlaying = false;
+    } else {
+      isPlaying = true;
+      playTimer = setInterval(() => {
+        viewAngle = (viewAngle + 0.02) % 1;
+        renderer?.render(viewAngle);
+      }, 50);
+    }
+  }
+
+  function handlePreviewKeydown(e: KeyboardEvent) {
+    // Don't capture if typing in an input
+    if ((e.target as HTMLElement)?.tagName === 'INPUT' || (e.target as HTMLElement)?.tagName === 'TEXTAREA') return;
+
+    switch (e.key) {
+      case ' ':
+        e.preventDefault();
+        togglePlay();
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        isPlaying && togglePlay();
+        viewAngle = Math.max(0, viewAngle - 0.05);
+        renderer?.render(viewAngle);
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        isPlaying && togglePlay();
+        viewAngle = Math.min(1, viewAngle + 0.05);
+        renderer?.render(viewAngle);
+        break;
+      case 'Delete':
+      case 'Backspace':
+        if (layoutStore.imageMode && currentFrame && layoutStore.selectedSection) {
+          e.preventDefault();
+          layoutStore.removeFrame(layoutStore.selectedSection.id, currentFrame.id);
+        }
+        break;
+    }
+  }
 </script>
 
-<svelte:window onresize={handleResize} onmouseup={handleMouseUp} />
+<svelte:window onresize={handleResize} onmouseup={handleMouseUp} onkeydown={handlePreviewKeydown} />
 
 <div class="preview-wrapper" class:fullscreen={isFullscreen} bind:this={wrapper}>
   <div class="workspace-toolbar" class:has-images={hasAnyImages}>
@@ -745,6 +814,59 @@
         Done
       </button>
     </div>
+    {#if currentFrame}
+      <div class="adjust-sliders">
+        <label class="adjust-field">
+          <span>Brightness</span>
+          <input type="range" min="-100" max="100" step="5"
+            value={currentFrame.transform?.brightness ?? 0}
+            oninput={(e) => {
+              if (!layoutStore.selectedId || !currentFrame) return;
+              const t = currentFrame.transform ?? { scale: 1, panX: 0, panY: 0 };
+              layoutStore.setFrameTransform(layoutStore.selectedId, currentFrame.id, { ...t, brightness: +(e.target as HTMLInputElement).value });
+            }}
+          />
+          <span class="adjust-value">{currentFrame.transform?.brightness ?? 0}</span>
+        </label>
+        <label class="adjust-field">
+          <span>Contrast</span>
+          <input type="range" min="-100" max="100" step="5"
+            value={currentFrame.transform?.contrast ?? 0}
+            oninput={(e) => {
+              if (!layoutStore.selectedId || !currentFrame) return;
+              const t = currentFrame.transform ?? { scale: 1, panX: 0, panY: 0 };
+              layoutStore.setFrameTransform(layoutStore.selectedId, currentFrame.id, { ...t, contrast: +(e.target as HTMLInputElement).value });
+            }}
+          />
+          <span class="adjust-value">{currentFrame.transform?.contrast ?? 0}</span>
+        </label>
+        <label class="adjust-field">
+          <span>Saturation</span>
+          <input type="range" min="-100" max="100" step="5"
+            value={currentFrame.transform?.saturation ?? 0}
+            oninput={(e) => {
+              if (!layoutStore.selectedId || !currentFrame) return;
+              const t = currentFrame.transform ?? { scale: 1, panX: 0, panY: 0 };
+              layoutStore.setFrameTransform(layoutStore.selectedId, currentFrame.id, { ...t, saturation: +(e.target as HTMLInputElement).value });
+            }}
+          />
+          <span class="adjust-value">{currentFrame.transform?.saturation ?? 0}</span>
+        </label>
+        <button class="toolbar-btn apply-all-btn" onclick={() => {
+          if (!layoutStore.selectedId || !currentFrame) return;
+          const t = currentFrame.transform;
+          if (!t) return;
+          const section = layoutStore.selectedSection;
+          if (!section) return;
+          for (const f of section.frames) {
+            const ft = f.transform ?? { scale: 1, panX: 0, panY: 0 };
+            layoutStore.setFrameTransform(section.id, f.id, { ...ft, brightness: t.brightness, contrast: t.contrast, saturation: t.saturation });
+          }
+        }} disabled={!currentFrame}>
+          Apply to all frames
+        </button>
+      </div>
+    {/if}
   {/if}
 
   <div class="preview-controls">
@@ -1039,6 +1161,48 @@
 
   .toolbar-spacer {
     flex: 1;
+  }
+
+  .adjust-sliders {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1px solid var(--success);
+    border-radius: 8px;
+    width: 100%;
+    max-width: 600px;
+  }
+
+  .adjust-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 140px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  .adjust-field input[type="range"] {
+    flex: 1;
+    height: 4px;
+    accent-color: var(--success);
+  }
+
+  .adjust-value {
+    font-size: 10px;
+    font-family: 'Space Grotesk', monospace;
+    color: var(--text-muted);
+    min-width: 28px;
+    text-align: right;
+  }
+
+  .apply-all-btn {
+    color: var(--success) !important;
+    font-size: 10px !important;
   }
 
   /* --- Controls --- */

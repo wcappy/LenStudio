@@ -5,6 +5,9 @@ export interface ImageTransform {
   flipH?: boolean;  // mirror horizontally
   flipV?: boolean;  // mirror vertically
   rotation?: number; // 0, 90, 180, 270 degrees clockwise
+  brightness?: number;  // -100 to 100 (0 = normal)
+  contrast?: number;    // -100 to 100 (0 = normal)
+  saturation?: number;  // -100 to 100 (0 = normal)
 }
 
 export interface ImageFrame {

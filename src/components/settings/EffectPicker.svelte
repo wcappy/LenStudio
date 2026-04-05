@@ -32,6 +32,20 @@
         </button>
       {/each}
     </div>
+    {#if layoutStore.sectionCount > 1}
+      <button
+        class="apply-all"
+        onclick={() => {
+          for (const s of layoutStore.sections) {
+            if (s.id !== section.id) {
+              layoutStore.setSectionEffect(s.id, section.effectType);
+            }
+          }
+        }}
+      >
+        Apply "{effects.find(e => e.value === section.effectType)?.label}" to all sections
+      </button>
+    {/if}
   {/if}
 </section>
 
@@ -93,5 +107,22 @@
 
   .effect-option.active .effect-desc {
     opacity: 0.7;
+  }
+
+  .apply-all {
+    margin-top: 8px;
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .apply-all:hover {
+    color: var(--accent);
+    border-color: var(--accent);
   }
 </style>

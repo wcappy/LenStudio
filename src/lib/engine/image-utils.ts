@@ -45,12 +45,32 @@ export function normalizeFrames(
       ctx.restore();
     }
 
+    // Apply image adjustments (brightness, contrast, saturation)
+    const brightness = frame.transform?.brightness ?? 0;
+    const contrast = frame.transform?.contrast ?? 0;
+    const saturation = frame.transform?.saturation ?? 0;
+    if (brightness !== 0 || contrast !== 0 || saturation !== 0) {
+      ctx.filter = buildCSSFilter(brightness, contrast, saturation);
+      ctx.drawImage(canvas, 0, 0);
+      ctx.filter = 'none';
+    }
+
     return {
       imageData: ctx.getImageData(0, 0, targetWidth, targetHeight),
       order: frame.order,
     };
   });
 }
+
+function buildCSSFilter(brightness: number, contrast: number, saturation: number): string {
+  const parts: string[] = [];
+  if (brightness !== 0) parts.push(`brightness(${1 + brightness / 100})`);
+  if (contrast !== 0) parts.push(`contrast(${1 + contrast / 100})`);
+  if (saturation !== 0) parts.push(`saturate(${1 + saturation / 100})`);
+  return parts.join(' ');
+}
+
+export { buildCSSFilter };
 
 function computeSourceRect(
   bw: number, bh: number,

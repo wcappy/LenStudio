@@ -1,6 +1,6 @@
 import type { ImageFrame, ImageTransform, BorderConfig, LayoutLeaf, LayoutNode, CellRect, DividerInfo } from '../types/index.js';
 import { computeTreeLayout } from '../utils/layout-tree.js';
-import { normalizeFrames } from '../engine/image-utils.js';
+import { normalizeFrames, buildCSSFilter } from '../engine/image-utils.js';
 import { applyEffect } from '../engine/effects/apply-effect.js';
 
 export class PreviewRenderer {
@@ -300,6 +300,12 @@ export class PreviewRenderer {
     const flipH = transform?.flipH ?? false;
     const flipV = transform?.flipV ?? false;
     const rotation = transform?.rotation ?? 0;
+    const brightness = transform?.brightness ?? 0;
+    const contrast = transform?.contrast ?? 0;
+    const saturation = transform?.saturation ?? 0;
+    const hasFilter = brightness !== 0 || contrast !== 0 || saturation !== 0;
+
+    if (hasFilter) ctx.filter = buildCSSFilter(brightness, contrast, saturation);
 
     if (flipH || flipV || rotation) {
       ctx.save();
@@ -311,6 +317,8 @@ export class PreviewRenderer {
     } else {
       ctx.drawImage(bitmap, src.sx, src.sy, src.sw, src.sh, x, y, w, h);
     }
+
+    if (hasFilter) ctx.filter = 'none';
   }
 
   private computeSourceRect(
