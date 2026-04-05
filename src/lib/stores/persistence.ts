@@ -210,7 +210,7 @@ export async function saveProject(
   const db = await openDB();
   const now = new Date().toISOString();
 
-  const project: ProjectData & { id: string } = {
+  const project: ProjectData & { id: string } = JSON.parse(JSON.stringify({
     id: projectId,
     version: 1,
     name,
@@ -219,7 +219,7 @@ export async function saveProject(
     settings,
     preset,
     tree: serializeTree(root),
-  };
+  }));
 
   // Check if existing project to preserve createdAt
   const existing = await idbGet<ProjectData & { id: string }>(db, STORE_PROJECTS, projectId);
