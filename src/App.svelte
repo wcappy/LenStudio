@@ -18,7 +18,7 @@
   import type { LayoutPreset } from './lib/types/index.js';
 
   type View = 'editor' | 'gallery' | 'new';
-  let view = $state<View>('editor');
+  let view = $state<View>('gallery');
   let restored = $state(false);
 
   function getSettings() {
