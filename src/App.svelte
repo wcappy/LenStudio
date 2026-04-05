@@ -19,7 +19,7 @@
 
   type View = 'editor' | 'gallery' | 'new';
   let view = $state<View>('editor');
-  let restored = false;
+  let restored = $state(false);
 
   function getSettings() {
     return {
