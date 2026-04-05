@@ -1,12 +1,13 @@
 <script lang="ts">
   import { layoutStore } from '../../lib/stores/layout.svelte.js';
   import { projectState } from '../../lib/stores/project.svelte.js';
-  import { listProjects, loadProject, deleteProject, saveProject, type ProjectMeta } from '../../lib/stores/persistence.js';
+  import { listProjects, loadProject, deleteProject, saveProject, getProjectThumbnails, type ProjectMeta } from '../../lib/stores/persistence.js';
   import type { LayoutPreset } from '../../lib/types/index.js';
 
   let { onopen, onnew }: { onopen: () => void; onnew: () => void } = $props();
 
   let projects = $state<ProjectMeta[]>([]);
+  let thumbnails = $state<Map<string, string[]>>(new Map());
   let loading = $state(true);
   let confirmDeleteId = $state<string | null>(null);
 
@@ -14,6 +15,15 @@
     loading = true;
     projects = await listProjects();
     loading = false;
+
+    // Load thumbnails in parallel
+    const entries = await Promise.all(
+      projects.map(async (p) => {
+        const urls = await getProjectThumbnails(p.id, 4);
+        return [p.id, urls] as [string, string[]];
+      })
+    );
+    thumbnails = new Map(entries);
   }
 
   refresh();
@@ -36,6 +46,9 @@
   }
 
   async function handleDelete(id: string) {
+    // Revoke thumbnail URLs
+    const urls = thumbnails.get(id);
+    if (urls) urls.forEach(u => URL.revokeObjectURL(u));
     await deleteProject(id);
     confirmDeleteId = null;
     await refresh();
@@ -98,22 +111,32 @@
   {:else}
     <div class="project-grid">
       {#each projects as project (project.id)}
+        {@const thumbs = thumbnails.get(project.id) ?? []}
         <div class="project-card">
           <button class="card-body" onclick={() => openProject(project.id)}>
-            <div class="card-icon">
-              <svg viewBox="0 0 32 32" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5">
-                <rect x="3" y="4" width="26" height="24" rx="3" />
-                <line x1="9" y1="4" x2="9" y2="28" opacity="0.3" />
-                <line x1="16" y1="4" x2="16" y2="28" opacity="0.3" />
-                <line x1="23" y1="4" x2="23" y2="28" opacity="0.3" />
-              </svg>
+            {#if thumbs.length > 0}
+              <div class="card-thumbs" class:single={thumbs.length === 1}>
+                {#each thumbs as url}
+                  <img src={url} alt="" class="card-thumb" />
+                {/each}
+              </div>
+            {:else}
+              <div class="card-thumbs empty">
+                <svg viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
+                  <rect x="3" y="4" width="26" height="24" rx="3" />
+                  <line x1="9" y1="4" x2="9" y2="28" opacity="0.3" />
+                  <line x1="16" y1="4" x2="16" y2="28" opacity="0.3" />
+                  <line x1="23" y1="4" x2="23" y2="28" opacity="0.3" />
+                </svg>
+              </div>
+            {/if}
+            <div class="card-info">
+              <span class="card-meta">
+                {project.sectionCount} section{project.sectionCount !== 1 ? 's' : ''} &bull;
+                {project.frameCount} frame{project.frameCount !== 1 ? 's' : ''}
+              </span>
+              <span class="card-date">{formatDate(project.updatedAt)}</span>
             </div>
-            <span class="card-name">{project.name}</span>
-            <span class="card-meta">
-              {project.sectionCount} section{project.sectionCount !== 1 ? 's' : ''} &bull;
-              {project.frameCount} frame{project.frameCount !== 1 ? 's' : ''}
-            </span>
-            <span class="card-date">{formatDate(project.updatedAt)}</span>
           </button>
           <div class="card-actions">
             {#if confirmDeleteId === project.id}
@@ -167,11 +190,7 @@
     align-items: center;
   }
 
-  .gallery-actions .btn-ghost,
   .save-current {
-    display: flex;
-    align-items: center;
-    gap: 5px;
     font-size: 12px;
     font-weight: 600;
   }
@@ -216,7 +235,7 @@
 
   .project-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 12px;
   }
 
@@ -235,11 +254,7 @@
   .card-body {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    padding: 20px 16px 12px;
     width: 100%;
-    text-align: center;
     cursor: pointer;
     transition: background 0.15s;
   }
@@ -248,20 +263,43 @@
     background: var(--surface-hover);
   }
 
-  .card-icon {
-    margin-bottom: 4px;
+  .card-thumbs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    aspect-ratio: 4 / 3;
+    background: var(--border);
+    overflow: hidden;
   }
 
-  .card-name {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text);
-    word-break: break-word;
+  .card-thumbs.single {
+    grid-template-columns: 1fr;
+  }
+
+  .card-thumbs.empty {
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .card-info {
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
 
   .card-meta {
     font-size: 11px;
-    color: var(--text-muted);
+    color: var(--text-secondary);
   }
 
   .card-date {
@@ -274,7 +312,7 @@
     display: flex;
     justify-content: center;
     gap: 4px;
-    padding: 6px;
+    padding: 4px 6px;
     border-top: 1px solid var(--border);
   }
 
@@ -312,13 +350,13 @@
     }
 
     .gallery-actions .btn-primary,
-    .gallery-actions .btn-ghost {
+    .save-current {
       flex: 1;
       justify-content: center;
     }
 
     .project-grid {
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
       gap: 8px;
     }
   }

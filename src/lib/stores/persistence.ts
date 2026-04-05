@@ -297,6 +297,26 @@ export async function listProjects(): Promise<ProjectMeta[]> {
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
+/** Load up to `max` frame thumbnail URLs for a project */
+export async function getProjectThumbnails(projectId: string, max = 4): Promise<string[]> {
+  const db = await openDB();
+  const project = await idbGet<ProjectData & { id: string }>(db, STORE_PROJECTS, projectId);
+  if (!project) { db.close(); return []; }
+
+  const frameIds = collectFrameIds(project.tree).slice(0, max);
+  const urls: string[] = [];
+
+  for (const fid of frameIds) {
+    const blob = await idbGet<Blob>(db, STORE_IMAGES, `${projectId}:${fid.id}`);
+    if (blob && blob.size > 0) {
+      urls.push(URL.createObjectURL(blob));
+    }
+  }
+
+  db.close();
+  return urls;
+}
+
 export async function deleteProject(projectId: string): Promise<void> {
   const db = await openDB();
   const project = await idbGet<ProjectData & { id: string }>(db, STORE_PROJECTS, projectId);
