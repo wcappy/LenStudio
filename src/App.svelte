@@ -12,15 +12,16 @@
   import EffectSettings from './components/settings/EffectSettings.svelte';
   import PreviewCanvas from './components/preview/PreviewCanvas.svelte';
   import NewProjectModal from './components/layout/NewProjectModal.svelte';
+  import ProjectGallery from './components/layout/ProjectGallery.svelte';
   import { layoutStore } from './lib/stores/layout.svelte.js';
   import { hasAutoSave, loadAutoSave } from './lib/stores/persistence.js';
 
-  let showNewProject = $state(false);
+  type View = 'editor' | 'gallery' | 'new';
+  let view = $state<View>('editor');
   let restored = false;
 
   // Auto-save: trigger on any tree/settings change
   $effect(() => {
-    // Track reactive deps
     const _root = layoutStore.root;
     const _lpi = projectState.lpi;
     const _dpi = projectState.dpi;
@@ -39,7 +40,7 @@
     }
   });
 
-  // Restore auto-save on startup (runs once)
+  // Restore auto-save on startup
   hasAutoSave().then(async (has) => {
     if (has) {
       const result = await loadAutoSave();
@@ -75,14 +76,8 @@
     return () => mq.removeEventListener('change', handler);
   });
 
-  // Global drop handler
-  function handleGlobalDrop(e: DragEvent) {
-    e.preventDefault();
-  }
-
-  function handleGlobalDragOver(e: DragEvent) {
-    e.preventDefault();
-  }
+  function handleGlobalDrop(e: DragEvent) { e.preventDefault(); }
+  function handleGlobalDragOver(e: DragEvent) { e.preventDefault(); }
 
   function handleKeydown(e: KeyboardEvent) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
@@ -97,29 +92,33 @@
 
 <svelte:window ondrop={handleGlobalDrop} ondragover={handleGlobalDragOver} onkeydown={handleKeydown} />
 
-<Header bind:showNewProject />
+<Header bind:view />
 
-{#if showNewProject}
+{#if view === 'gallery'}
+  <div class="workspace">
+    <ProjectGallery
+      onopen={() => (view = 'editor')}
+      onnew={() => (view = 'new')}
+    />
+  </div>
+{:else if view === 'new'}
   <div class="workspace">
     <div class="new-project-inline">
-      <NewProjectModal open={true} onclose={() => showNewProject = false} inline />
+      <NewProjectModal open={true} onclose={() => (view = 'editor')} inline />
     </div>
   </div>
 {:else}
   <div class="workspace">
-    <!-- Left panel: Structure + Images -->
     <aside class="panel panel-left">
       <SectionSelector />
       <ImageList />
       <PrintSettings />
     </aside>
 
-    <!-- Main preview area -->
     <MainArea>
       <PreviewCanvas />
     </MainArea>
 
-    <!-- Right panel: Effects -->
     <aside class="panel panel-right">
       <EffectPicker />
       <EffectSettings />
@@ -128,10 +127,11 @@
   </div>
 {/if}
 
-<!-- Mobile: tabbed drawer (hidden on desktop) -->
 <MobileTabs />
 
-<StatusBar />
+{#if view === 'editor'}
+  <StatusBar />
+{/if}
 
 <style>
   .workspace {
@@ -168,7 +168,6 @@
     border-left: 1px solid var(--border);
   }
 
-  /* Compact sidebars for narrow desktop / landscape / tablet */
   @media (max-width: 900px) {
     .panel-left,
     .panel-right {
@@ -176,7 +175,6 @@
     }
   }
 
-  /* Mobile: single column */
   @media (max-width: 640px) {
     .workspace {
       flex-direction: column;

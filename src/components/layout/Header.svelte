@@ -4,7 +4,8 @@
   import { exportProjectFile, importProjectFile, saveProject, listProjects, loadProject, deleteProject } from '../../lib/stores/persistence.js';
   import ExportModal from '../export/ExportModal.svelte';
 
-  let { showNewProject = $bindable(false) }: { showNewProject: boolean } = $props();
+  type View = 'editor' | 'gallery' | 'new';
+  let { view = $bindable<View>('editor') }: { view: View } = $props();
   let showExport = $state(false);
   let loadInput: HTMLInputElement;
 
@@ -45,6 +46,7 @@
       projectState.outputWidthInches = result.data.settings.outputWidthInches;
       projectState.outputHeightInches = result.data.settings.outputHeightInches;
       if (result.data.settings.border) projectState.border = result.data.settings.border;
+      view = 'editor';
     } catch (err) {
       console.error('Failed to load project:', err);
     }
@@ -106,7 +108,15 @@
         <line x1="8" y1="1" x2="8" y2="10" />
       </svg>
     </button>
-    <button class="btn-ghost new-btn" onclick={() => (showNewProject = true)}>
+    <button class="btn-ghost projects-btn" onclick={() => (view = 'gallery')} title="My Projects">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="1" y="1" width="6" height="6" rx="1" />
+        <rect x="9" y="1" width="6" height="6" rx="1" />
+        <rect x="1" y="9" width="6" height="6" rx="1" />
+        <rect x="9" y="9" width="6" height="6" rx="1" />
+      </svg>
+    </button>
+    <button class="btn-ghost new-btn" onclick={() => (view = 'new')}>
       + New
     </button>
     <button
@@ -180,8 +190,15 @@
     transition: color 0.15s;
   }
 
-  .save-btn:hover {
+  .save-btn:hover,
+  .projects-btn:hover {
     color: var(--text);
+  }
+
+  .projects-btn {
+    padding: 6px;
+    color: var(--text-muted);
+    transition: color 0.15s;
   }
 
   .new-btn {
