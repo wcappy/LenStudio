@@ -9,7 +9,7 @@ import {
   leafCount, resetAllRatios
 } from '../utils/layout-tree.js';
 import { historyStore } from './history.svelte.js';
-import { autoSave, loadAutoSave, type ProjectData } from './persistence.js';
+import { saveProject, type ProjectData } from './persistence.js';
 
 const MAX_FRAMES_PER_SECTION = 12;
 const MIN_FRAMES_PER_SECTION = 2;
@@ -316,36 +316,31 @@ class LayoutStore {
 
   // --- Custom grid (preset-based) ---
 
+  projectId = $state(crypto.randomUUID());
   projectName = $state('Untitled');
   private autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
 
   triggerAutoSave(settings: ProjectData['settings']) {
     if (this.autoSaveTimer) clearTimeout(this.autoSaveTimer);
     this.autoSaveTimer = setTimeout(() => {
-      autoSave(this.root, this.preset, settings).catch(() => {});
+      saveProject(this.projectId, this.projectName, this.root, this.preset, settings).catch(() => {});
     }, 2000);
   }
 
-  async restoreAutoSave(): Promise<boolean> {
-    const result = await loadAutoSave();
-    if (!result) return false;
-    this.root = result.root;
-    this.preset = result.data.preset as LayoutPreset;
-    this.projectName = result.data.name;
-    const leaves = getLeaves(this.root);
-    this.selectedId = leaves[0]?.id ?? null;
-    historyStore.clear();
-    return true;
-  }
-
-  loadFromProject(root: LayoutNode, preset: LayoutPreset, name: string) {
+  loadFromProject(root: LayoutNode, preset: LayoutPreset, name: string, id?: string) {
     this.cleanupFrames();
+    this.projectId = id ?? crypto.randomUUID();
     this.root = root;
     this.preset = preset;
     this.projectName = name;
     const leaves = getLeaves(this.root);
     this.selectedId = leaves[0]?.id ?? null;
     historyStore.clear();
+  }
+
+  newProject() {
+    this.projectId = crypto.randomUUID();
+    this.projectName = 'Untitled';
   }
 
   customCols = $state(2);

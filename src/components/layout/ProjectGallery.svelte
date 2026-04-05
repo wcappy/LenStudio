@@ -1,7 +1,7 @@
 <script lang="ts">
   import { layoutStore } from '../../lib/stores/layout.svelte.js';
   import { projectState } from '../../lib/stores/project.svelte.js';
-  import { listProjects, loadProject, deleteProject, saveProject, type ProjectMeta } from '../../lib/stores/persistence.js';
+  import { listProjects, loadProject, deleteProject, type ProjectMeta } from '../../lib/stores/persistence.js';
   import type { LayoutPreset } from '../../lib/types/index.js';
 
   let { onopen, onnew }: { onopen: () => void; onnew: () => void } = $props();
@@ -24,7 +24,8 @@
     layoutStore.loadFromProject(
       result.root,
       result.data.preset as LayoutPreset,
-      result.data.name
+      result.data.name,
+      id
     );
     projectState.lpi = result.data.settings.lpi;
     projectState.dpi = result.data.settings.dpi;
@@ -37,18 +38,6 @@
   async function handleDelete(id: string) {
     await deleteProject(id);
     confirmDeleteId = null;
-    await refresh();
-  }
-
-  async function saveCurrentProject() {
-    const id = crypto.randomUUID();
-    await saveProject(id, layoutStore.projectName, layoutStore.root, layoutStore.preset, {
-      lpi: projectState.lpi,
-      dpi: projectState.dpi,
-      outputWidthInches: projectState.outputWidthInches,
-      outputHeightInches: projectState.outputHeightInches,
-      border: projectState.border,
-    });
     await refresh();
   }
 
@@ -68,14 +57,6 @@
   <div class="gallery-header">
     <h2 class="gallery-title">My Projects</h2>
     <div class="gallery-actions">
-      <button class="btn-ghost" onclick={saveCurrentProject}>
-        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M3 1h8l3 3v9a2 2 0 01-2 2H3a2 2 0 01-2-2V3a2 2 0 012-2z" />
-          <path d="M5 1v4h5V1" />
-          <rect x="4" y="9" width="7" height="4" rx="0.5" />
-        </svg>
-        Save Current
-      </button>
       <button class="btn-primary" onclick={onnew}>
         + New Project
       </button>

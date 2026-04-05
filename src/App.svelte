@@ -14,7 +14,8 @@
   import NewProjectModal from './components/layout/NewProjectModal.svelte';
   import ProjectGallery from './components/layout/ProjectGallery.svelte';
   import { layoutStore } from './lib/stores/layout.svelte.js';
-  import { hasAutoSave, loadAutoSave } from './lib/stores/persistence.js';
+  import { listProjects, loadProject } from './lib/stores/persistence.js';
+  import type { LayoutPreset } from './lib/types/index.js';
 
   type View = 'editor' | 'gallery' | 'new';
   let view = $state<View>('editor');
@@ -40,15 +41,16 @@
     }
   });
 
-  // Restore auto-save on startup
-  hasAutoSave().then(async (has) => {
-    if (has) {
-      const result = await loadAutoSave();
+  // Restore most recent project on startup
+  listProjects().then(async (projects) => {
+    if (projects.length > 0) {
+      const result = await loadProject(projects[0].id);
       if (result) {
         layoutStore.loadFromProject(
           result.root,
-          result.data.preset as any,
-          result.data.name
+          result.data.preset as LayoutPreset,
+          result.data.name,
+          projects[0].id
         );
         projectState.lpi = result.data.settings.lpi;
         projectState.dpi = result.data.settings.dpi;

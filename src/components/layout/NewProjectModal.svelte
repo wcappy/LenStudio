@@ -106,6 +106,7 @@
   }
 
   function handleCreate() {
+    layoutStore.newProject();
     projectState.outputWidthInches = unitToInches(displayW, projectState.unit);
     projectState.outputHeightInches = unitToInches(displayH, projectState.unit);
     projectState.lpi = selectedLpi;
