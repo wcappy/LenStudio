@@ -20,6 +20,7 @@ export class PreviewRenderer {
   // Modes
   private layoutMode = false;
   private imageMode = false;
+  private anaglyphMode = false;
   private hoveredDivider: string | null = null; // splitId
   private dragTargetId: string | null = null;
 
@@ -59,6 +60,10 @@ export class PreviewRenderer {
 
   setImageMode(enabled: boolean) {
     this.imageMode = enabled;
+  }
+
+  setAnaglyphMode(enabled: boolean) {
+    this.anaglyphMode = enabled;
   }
 
   setHoveredDivider(splitId: string | null) {
@@ -264,6 +269,41 @@ export class PreviewRenderer {
         ctx.drawImage(bmpB, x, y, w, h);
         ctx.globalAlpha = 1;
       }
+      return;
+    }
+
+    // Anaglyph mode: composite left/right as red/cyan
+    if (this.anaglyphMode && frames.length >= 2) {
+      const left = frames[0];
+      const right = frames[1];
+      if (!left.bitmap || !right.bitmap) return;
+
+      // Draw left frame, extract, draw right frame, extract, composite
+      const tmpCanvas = new OffscreenCanvas(Math.round(w), Math.round(h));
+      const tmpCtx = tmpCanvas.getContext('2d')!;
+
+      // Left eye
+      const srcL = this.computeSourceRect(left.bitmap, w, h, left.transform);
+      tmpCtx.clearRect(0, 0, w, h);
+      tmpCtx.drawImage(left.bitmap, srcL.sx, srcL.sy, srcL.sw, srcL.sh, 0, 0, w, h);
+      const leftData = tmpCtx.getImageData(0, 0, Math.round(w), Math.round(h));
+
+      // Right eye
+      const srcR = this.computeSourceRect(right.bitmap, w, h, right.transform);
+      tmpCtx.clearRect(0, 0, w, h);
+      tmpCtx.drawImage(right.bitmap, srcR.sx, srcR.sy, srcR.sw, srcR.sh, 0, 0, w, h);
+      const rightData = tmpCtx.getImageData(0, 0, Math.round(w), Math.round(h));
+
+      // Composite: red from left, cyan from right
+      const out = leftData;
+      for (let i = 0; i < out.data.length; i += 4) {
+        const lum = out.data[i] * 0.299 + out.data[i + 1] * 0.587 + out.data[i + 2] * 0.114;
+        out.data[i] = Math.round(lum);         // Red from left
+        out.data[i + 1] = rightData.data[i + 1]; // Green from right
+        out.data[i + 2] = rightData.data[i + 2]; // Blue from right
+      }
+      tmpCtx.putImageData(out, 0, 0);
+      ctx.drawImage(tmpCanvas, x, y);
       return;
     }
 

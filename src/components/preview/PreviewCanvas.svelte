@@ -64,6 +64,7 @@
     if (renderer) {
       renderer.setLayoutMode(layoutStore.layoutMode && hasSplits);
       renderer.setImageMode(layoutStore.imageMode);
+      renderer.setAnaglyphMode(projectState.projectType === 'anaglyph');
       renderer.render(viewAngle);
     }
   });
