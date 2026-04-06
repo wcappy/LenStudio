@@ -83,3 +83,30 @@ Smoother animations with fewer source images.
 - **Keyboard shortcuts**: Space = play animation, arrows = scrub, Delete = remove frame
 - **Drag-to-reorder sections**: Reorder sections in the layout, not just frames
 - **Copy effect to all sections**: "Apply to all" button in effect picker
+
+---
+
+## Additional Print/Display Types
+
+The interlacing engine is a generic spatial multiplexing system. These technologies reuse the same strip-based approach:
+
+### Scanimation / Moiré Animation
+- Same interlaced image, viewed through a striped acetate overlay instead of lenses
+- Much cheaper — no lenticular lens sheet needed, just print overlay on transparency film
+- Popular in children's books, greeting cards, educational materials
+- Implementation: Generate a black/white stripe overlay PNG matching the LPI
+
+### Wiggle Stereogram GIF/Video
+- Export frame sequence as animated GIF alternating between 2-3 views
+- Creates "wiggle" 3D effect on screen — no print or lenses needed
+- Great for social media sharing
+- Implementation: Render frames at intervals, encode as animated GIF
+
+### Anaglyph 3D (Red/Cyan)
+- Take 2 frames (left/right eye), combine into single red/cyan image
+- Viewable with cheap paper 3D glasses
+- Implementation: Map left frame to red channel, right frame to cyan channels
+
+### Parallax Barrier
+- Identical interlacing to lenticular, but viewing device uses slits instead of lenses
+- Same LPI/DPI math applies — already works, just label it as an option

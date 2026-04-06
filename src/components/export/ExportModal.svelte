@@ -3,11 +3,17 @@
   import { layoutStore } from '../../lib/stores/layout.svelte.js';
   import { runExport, EXPORT_FORMATS } from '../../lib/engine/run-export.js';
   import type { ExportFormat } from '../../lib/engine/run-export.js';
-  import { formatFileSize } from '../../lib/utils/file-helpers.js';
+  import { exportOverlayPng } from '../../lib/engine/export-overlay.js';
+  import { formatFileSize, downloadBlob } from '../../lib/utils/file-helpers.js';
 
   let { open = $bindable(false) }: { open: boolean } = $props();
 
   let selectedFormat = $state<ExportFormat>('tiff');
+  let includeOverlay = $state(false);
+
+  const totalFrames = $derived(
+    layoutStore.sections.reduce((sum, s) => Math.max(sum, s.frames.length), 0)
+  );
 
   const outputW = $derived(projectState.outputWidthPx);
   const outputH = $derived(projectState.outputHeightPx);
@@ -29,6 +35,17 @@
   async function handleExport() {
     open = false;
     await runExport(selectedFormat);
+    if (includeOverlay && totalFrames > 1) {
+      const blob = await exportOverlayPng(
+        projectState.outputWidthPx,
+        projectState.outputHeightPx,
+        projectState.lpi,
+        projectState.dpi,
+        totalFrames
+      );
+      const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      downloadBlob(blob, `tilt-overlay-${ts}.png`);
+    }
   }
 
   function handleBackdropClick(e: MouseEvent) {
@@ -98,6 +115,15 @@
           <span class="estimate-label">Estimated file size</span>
           <span class="estimate-value">~{formatFileSize(estimatedSize)}</span>
         </div>
+
+        <!-- Scanimation overlay -->
+        <label class="overlay-option">
+          <input type="checkbox" bind:checked={includeOverlay} />
+          <div class="overlay-text">
+            <span class="overlay-label">Include scanimation overlay</span>
+            <span class="overlay-desc">Downloads a striped overlay PNG — print on transparency, slide across the image to see animation</span>
+          </div>
+        </label>
       </div>
 
       <div class="modal-footer">
@@ -280,6 +306,44 @@
     color: var(--text-secondary);
     font-family: 'Space Grotesk', monospace;
     font-weight: 500;
+  }
+
+  .overlay-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--surface);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .overlay-option:hover {
+    background: var(--surface-hover);
+  }
+
+  .overlay-option input[type="checkbox"] {
+    margin-top: 2px;
+    accent-color: var(--accent);
+  }
+
+  .overlay-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .overlay-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .overlay-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
   }
 
   .modal-footer {
