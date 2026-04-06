@@ -33,16 +33,16 @@
   });
 
   async function handleExport() {
+    const wantOverlay = includeOverlay && totalFrames > 1;
+    const lpi = projectState.lpi;
+    const dpi = projectState.dpi;
+    const w = projectState.outputWidthPx;
+    const h = projectState.outputHeightPx;
+    const frames = totalFrames;
     open = false;
     await runExport(selectedFormat);
-    if (includeOverlay && totalFrames > 1) {
-      const blob = await exportOverlayPng(
-        projectState.outputWidthPx,
-        projectState.outputHeightPx,
-        projectState.lpi,
-        projectState.dpi,
-        totalFrames
-      );
+    if (wantOverlay) {
+      const blob = await exportOverlayPng(w, h, lpi, dpi, frames);
       const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
       downloadBlob(blob, `tilt-overlay-${ts}.png`);
     }
