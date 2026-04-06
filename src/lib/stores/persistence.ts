@@ -1,4 +1,4 @@
-import type { LayoutNode, LayoutLeaf, ImageFrame, ImageTransform, EffectType, EffectParams, LPI, DPI, BorderConfig } from '../types/index.js';
+import type { LayoutNode, LayoutLeaf, ImageFrame, ImageTransform, EffectType, EffectParams, LPI, DPI, BorderConfig, ProjectType } from '../types/index.js';
 import { getLeaves } from '../utils/layout-tree.js';
 
 const DB_NAME = 'tilt-studio';
@@ -42,6 +42,7 @@ export interface ProjectData {
   name: string;
   createdAt: string;
   updatedAt: string;
+  projectType?: ProjectType;
   settings: {
     lpi: LPI;
     dpi: DPI;
@@ -205,7 +206,8 @@ export async function saveProject(
   name: string,
   root: LayoutNode,
   preset: { id: string; label: string; cols: number; rows: number },
-  settings: ProjectData['settings']
+  settings: ProjectData['settings'],
+  projectType?: ProjectType
 ): Promise<void> {
   const db = await openDB();
   const now = new Date().toISOString();
@@ -216,6 +218,7 @@ export async function saveProject(
     name,
     createdAt: now,
     updatedAt: now,
+    projectType: projectType ?? 'lenticular',
     settings,
     preset,
     tree: serializeTree(root),

@@ -12,31 +12,33 @@
   <span class="section-label">Print Settings</span>
 
   <div class="settings-grid">
-    <div class="field">
-      <label for="lpi-select">LPI</label>
-      <select
-        id="lpi-select"
-        value={projectState.lpi}
-        onchange={(e) => (projectState.lpi = Number((e.target as HTMLSelectElement).value) as LPI)}
-      >
-        {#each LPI_OPTIONS as lpi}
-          <option value={lpi}>{lpi}</option>
-        {/each}
-      </select>
-    </div>
+    {#if projectState.typeInfo.needsLpi}
+      <div class="field">
+        <label for="lpi-select">LPI</label>
+        <select
+          id="lpi-select"
+          value={projectState.lpi}
+          onchange={(e) => (projectState.lpi = Number((e.target as HTMLSelectElement).value) as LPI)}
+        >
+          {#each LPI_OPTIONS as lpi}
+            <option value={lpi}>{lpi}</option>
+          {/each}
+        </select>
+      </div>
 
-    <div class="field">
-      <label for="dpi-select">DPI</label>
-      <select
-        id="dpi-select"
-        value={projectState.dpi}
-        onchange={(e) => (projectState.dpi = Number((e.target as HTMLSelectElement).value) as DPI)}
-      >
-        {#each DPI_OPTIONS as dpi}
-          <option value={dpi}>{dpi}</option>
-        {/each}
-      </select>
-    </div>
+      <div class="field">
+        <label for="dpi-select">DPI</label>
+        <select
+          id="dpi-select"
+          value={projectState.dpi}
+          onchange={(e) => (projectState.dpi = Number((e.target as HTMLSelectElement).value) as DPI)}
+        >
+          {#each DPI_OPTIONS as dpi}
+            <option value={dpi}>{dpi}</option>
+          {/each}
+        </select>
+      </div>
+    {/if}
 
     <div class="field">
       <label for="width-input">Width ({unitLabel(projectState.unit)})</label>
@@ -81,8 +83,10 @@
   </div>
 
   <p class="output-summary">
-    {projectState.outputWidthPx} &times; {projectState.outputHeightPx} px &bull;
-    {projectState.stripWidth} px/lenticule
+    {projectState.outputWidthPx} &times; {projectState.outputHeightPx} px
+    {#if projectState.typeInfo.needsLpi}
+      &bull; {projectState.stripWidth} px/lenticule
+    {/if}
   </p>
 </section>
 

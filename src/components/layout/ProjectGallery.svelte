@@ -37,6 +37,7 @@
       result.data.name,
       id
     );
+    projectState.projectType = result.data.projectType ?? 'lenticular';
     projectState.lpi = result.data.settings.lpi;
     projectState.dpi = result.data.settings.dpi;
     projectState.outputWidthInches = result.data.settings.outputWidthInches;
@@ -63,7 +64,7 @@
       outputWidthInches: projectState.outputWidthInches,
       outputHeightInches: projectState.outputHeightInches,
       border: projectState.border,
-    });
+    }, projectState.projectType);
     await refresh();
     saving = false;
   }

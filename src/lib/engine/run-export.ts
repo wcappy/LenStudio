@@ -8,6 +8,7 @@ import { exportPng } from './export.js';
 import { exportTiff } from './export-tiff.js';
 import { exportBmp } from './export-bmp.js';
 import { exportPdf } from './export-pdf.js';
+import { generateAnaglyph } from './export-anaglyph.js';
 import { downloadBlob } from '../utils/file-helpers.js';
 
 export type ExportFormat = 'tiff' | 'png' | 'bmp' | 'pdf';
@@ -98,16 +99,24 @@ export async function runExport(format: ExportFormat): Promise<void> {
       const normalized = normalizeFrames(section.frames, sectionW, sectionH);
       const frameData = applyEffect(normalized, section.effectType, section.effectParams);
 
-      const interlaced = interlaceFrames(frameData, lpi, dpi, (pct) => {
-        projectState.processProgress = baseProgress + Math.round((pct / totalSections) * 0.9);
-      });
+      let result: ImageData;
+      if (projectState.projectType === 'anaglyph') {
+        // Anaglyph: combine first 2 frames into red/cyan, no interlacing
+        result = frameData.length >= 2
+          ? generateAnaglyph(frameData[0], frameData[1])
+          : frameData[0];
+      } else {
+        result = interlaceFrames(frameData, lpi, dpi, (pct) => {
+          projectState.processProgress = baseProgress + Math.round((pct / totalSections) * 0.9);
+        });
+      }
 
       const x = Math.round(rect.x);
       const y = Math.round(rect.y);
 
-      const tempCanvas = new OffscreenCanvas(interlaced.width, interlaced.height);
+      const tempCanvas = new OffscreenCanvas(result.width, result.height);
       const tempCtx = tempCanvas.getContext('2d')!;
-      tempCtx.putImageData(interlaced, 0, 0);
+      tempCtx.putImageData(result, 0, 0);
       outputCtx.drawImage(tempCanvas, x, y, sectionW, sectionH);
     }
 

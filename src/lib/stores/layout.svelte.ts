@@ -9,6 +9,7 @@ import {
   leafCount, resetAllRatios
 } from '../utils/layout-tree.js';
 import { historyStore } from './history.svelte.js';
+import type { ProjectType } from '../types/index.js';
 import { saveProject, type ProjectData } from './persistence.js';
 
 const MAX_FRAMES_PER_SECTION = 12;
@@ -320,10 +321,10 @@ class LayoutStore {
   projectName = $state('Untitled');
   private autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
 
-  triggerAutoSave(settings: ProjectData['settings']) {
+  triggerAutoSave(settings: ProjectData['settings'], projectType?: ProjectType) {
     if (this.autoSaveTimer) clearTimeout(this.autoSaveTimer);
     this.autoSaveTimer = setTimeout(() => {
-      saveProject(this.projectId, this.projectName, this.root, this.preset, settings).catch(() => {});
+      saveProject(this.projectId, this.projectName, this.root, this.preset, settings, projectType).catch(() => {});
     }, 2000);
   }
 

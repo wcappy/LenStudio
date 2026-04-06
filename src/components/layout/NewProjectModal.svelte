@@ -2,8 +2,8 @@
   import { projectState, inchesToUnit, unitToInches, unitLabel, unitStep, unitMax } from '../../lib/stores/project.svelte.js';
   import type { MeasurementUnit } from '../../lib/stores/project.svelte.js';
   import { layoutStore } from '../../lib/stores/layout.svelte.js';
-  import type { LPI, DPI, LayoutPreset } from '../../lib/types/index.js';
-  import { LPI_OPTIONS, DPI_OPTIONS, LAYOUT_PRESETS } from '../../lib/types/index.js';
+  import type { LPI, DPI, LayoutPreset, ProjectType } from '../../lib/types/index.js';
+  import { LPI_OPTIONS, DPI_OPTIONS, LAYOUT_PRESETS, PROJECT_TYPES } from '../../lib/types/index.js';
 
   let { open = $bindable(false), inline = false, onclose }: { open: boolean; inline?: boolean; onclose?: () => void } = $props();
 
@@ -51,6 +51,7 @@
 
   const categories = [...new Set(presets.map(p => p.category))];
 
+  let selectedType = $state<ProjectType>(projectState.projectType);
   let selectedPreset = $state<SizePreset | null>(null);
   let isCustom = $state(false);
   let selectedLpi = $state(projectState.lpi);
@@ -107,6 +108,7 @@
 
   function handleCreate() {
     layoutStore.newProject();
+    projectState.projectType = selectedType;
     projectState.outputWidthInches = unitToInches(displayW, projectState.unit);
     projectState.outputHeightInches = unitToInches(displayH, projectState.unit);
     projectState.lpi = selectedLpi;
@@ -145,6 +147,20 @@
   </div>
 
   <div class="modal-body">
+    <!-- Project Type -->
+    <div class="type-selector">
+      {#each PROJECT_TYPES as type}
+        <button
+          class="type-btn"
+          class:active={selectedType === type.id}
+          onclick={() => (selectedType = type.id)}
+        >
+          <span class="type-name">{type.label}</span>
+          <span class="type-desc">{type.description}</span>
+        </button>
+      {/each}
+    </div>
+
     <div class="presets-panel">
       <div class="orientation-toggle">
         <button class="orient-btn" class:active={orientation === 'portrait'} onclick={() => { if (orientation !== 'portrait') toggleOrientation(); }}>
@@ -209,23 +225,28 @@
         </div>
       </div>
 
-      <div class="print-inputs">
-        <span class="section-label">Print Settings</span>
-        <div class="input-row">
-          <div class="field">
-            <label for="new-lpi">LPI</label>
-            <select id="new-lpi" bind:value={selectedLpi}>
-              {#each LPI_OPTIONS as lpi}<option value={lpi}>{lpi}</option>{/each}
-            </select>
+      {#if PROJECT_TYPES.find(t => t.id === selectedType)?.needsLpi}
+        <div class="print-inputs">
+          <span class="section-label">Print Settings</span>
+          <div class="input-row">
+            <div class="field">
+              <label for="new-lpi">LPI</label>
+              <select id="new-lpi" bind:value={selectedLpi}>
+                {#each LPI_OPTIONS as lpi}<option value={lpi}>{lpi}</option>{/each}
+              </select>
+            </div>
+            <div class="field">
+              <label for="new-dpi">DPI</label>
+              <select id="new-dpi" bind:value={selectedDpi}>
+                {#each DPI_OPTIONS as dpi}<option value={dpi}>{dpi}</option>{/each}
+              </select>
+            </div>
           </div>
-          <div class="field">
-            <label for="new-dpi">DPI</label>
-            <select id="new-dpi" bind:value={selectedDpi}>
-              {#each DPI_OPTIONS as dpi}<option value={dpi}>{dpi}</option>{/each}
-            </select>
-          </div>
+          {#if PROJECT_TYPES.find(t => t.id === selectedType)?.recommendedFrames}
+            <p class="type-hint">{PROJECT_TYPES.find(t => t.id === selectedType)?.recommendedFrames}</p>
+          {/if}
         </div>
-      </div>
+      {/if}
 
       <div class="layout-inputs">
         <span class="section-label">Layout</span>
@@ -333,6 +354,56 @@
     max-width: 780px;
     max-height: 100%;
     border-radius: 12px;
+  }
+
+  .type-selector {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    padding: 0 24px;
+    margin-top: -8px;
+  }
+
+  .type-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 6px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    font-size: 11px;
+    color: var(--text-secondary);
+    transition: border-color 0.15s, color 0.15s;
+    text-align: center;
+  }
+
+  .type-btn:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  .type-btn.active {
+    border-color: var(--accent);
+    background: var(--accent-muted);
+    color: var(--accent);
+  }
+
+  .type-name {
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  .type-desc {
+    font-size: 9px;
+    opacity: 0.7;
+    line-height: 1.3;
+  }
+
+  .type-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
   }
 
   .modal-header {

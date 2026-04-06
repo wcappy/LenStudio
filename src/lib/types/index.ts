@@ -1,9 +1,9 @@
 export type { ImageFrame, ImageTransform, CropRect, NormalizedFrame } from './image.js';
 export type {
-  LPI, DPI, EffectType, ExportFormat,
+  LPI, DPI, EffectType, ExportFormat, ProjectType, ProjectTypeInfo,
   LenticularSettings, ExportSettings, BorderConfig
 } from './settings.js';
-export { LPI_OPTIONS, DPI_OPTIONS } from './settings.js';
+export { LPI_OPTIONS, DPI_OPTIONS, PROJECT_TYPES } from './settings.js';
 export type {
   EffectConfig, EffectParams,
   FlipParams, AnimationParams, Depth3dParams, ZoomParams, MorphParams

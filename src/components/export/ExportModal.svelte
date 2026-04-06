@@ -142,31 +142,60 @@
           <span class="estimate-value">~{formatFileSize(estimatedSize)}</span>
         </div>
 
-        <!-- Extra outputs -->
-        <div class="extras">
-          <span class="section-label">Extras</span>
-          <label class="overlay-option">
-            <input type="checkbox" bind:checked={includeOverlay} />
-            <div class="overlay-text">
-              <span class="overlay-label">Scanimation overlay</span>
-              <span class="overlay-desc">Striped overlay PNG — print on transparency, slide across to animate</span>
+        <!-- Type-specific extras -->
+        {#if projectState.projectType === 'scanimation'}
+          <div class="extras">
+            <label class="overlay-option active-default">
+              <input type="checkbox" bind:checked={includeOverlay} />
+              <div class="overlay-text">
+                <span class="overlay-label">Scanimation overlay</span>
+                <span class="overlay-desc">Striped overlay PNG — print on transparency, slide across to animate</span>
+              </div>
+            </label>
+          </div>
+        {:else if projectState.projectType === 'parallax'}
+          <div class="extras">
+            <label class="overlay-option active-default">
+              <input type="checkbox" bind:checked={includeBarrier} />
+              <div class="overlay-text">
+                <span class="overlay-label">Parallax barrier mask</span>
+                <span class="overlay-desc">Slit mask PNG — mount at fixed distance for glasses-free 3D</span>
+              </div>
+            </label>
+          </div>
+        {:else if projectState.projectType === 'anaglyph'}
+          <div class="extras">
+            <div class="type-info-box">
+              Red/cyan anaglyph — the exported image is already viewable with 3D glasses
             </div>
-          </label>
-          <label class="overlay-option">
-            <input type="checkbox" bind:checked={includeBarrier} />
-            <div class="overlay-text">
-              <span class="overlay-label">Parallax barrier mask</span>
-              <span class="overlay-desc">Slit mask PNG — mount at fixed distance for glasses-free 3D viewing</span>
-            </div>
-          </label>
-          <label class="overlay-option" class:disabled={!hasEnoughForAnaglyph}>
-            <input type="checkbox" bind:checked={includeAnaglyph} disabled={!hasEnoughForAnaglyph} />
-            <div class="overlay-text">
-              <span class="overlay-label">Anaglyph 3D (red/cyan)</span>
-              <span class="overlay-desc">{hasEnoughForAnaglyph ? 'Combines first 2 frames into a red/cyan 3D image — viewable with 3D glasses' : 'Needs at least 2 frames'}</span>
-            </div>
-          </label>
-        </div>
+          </div>
+        {:else}
+          <!-- Lenticular: show all extras as optional -->
+          <div class="extras">
+            <span class="section-label">Extras</span>
+            <label class="overlay-option">
+              <input type="checkbox" bind:checked={includeOverlay} />
+              <div class="overlay-text">
+                <span class="overlay-label">Scanimation overlay</span>
+                <span class="overlay-desc">Striped overlay PNG — slide across to animate</span>
+              </div>
+            </label>
+            <label class="overlay-option">
+              <input type="checkbox" bind:checked={includeBarrier} />
+              <div class="overlay-text">
+                <span class="overlay-label">Parallax barrier mask</span>
+                <span class="overlay-desc">Slit mask for glasses-free 3D</span>
+              </div>
+            </label>
+            <label class="overlay-option" class:disabled={!hasEnoughForAnaglyph}>
+              <input type="checkbox" bind:checked={includeAnaglyph} disabled={!hasEnoughForAnaglyph} />
+              <div class="overlay-text">
+                <span class="overlay-label">Anaglyph 3D (red/cyan)</span>
+                <span class="overlay-desc">{hasEnoughForAnaglyph ? 'Red/cyan 3D from first 2 frames' : 'Needs at least 2 frames'}</span>
+              </div>
+            </label>
+          </div>
+        {/if}
       </div>
 
       <div class="modal-footer">
@@ -375,6 +404,15 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+  }
+
+  .type-info-box {
+    padding: 10px 14px;
+    background: var(--surface);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
   }
 
   .overlay-option input[type="checkbox"] {

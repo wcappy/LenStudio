@@ -1,4 +1,5 @@
-import type { LPI, DPI, BorderConfig } from '../types/index.js';
+import type { LPI, DPI, BorderConfig, ProjectType } from '../types/index.js';
+import { PROJECT_TYPES } from '../types/index.js';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 export type MeasurementUnit = 'mm' | 'cm' | 'in';
@@ -60,6 +61,7 @@ function savePref(key: string, value: string) {
 }
 
 class ProjectState {
+  projectType = $state<ProjectType>('lenticular');
   lpi = $state<LPI>(60);
   dpi = $state<DPI>(300);
   outputWidthInches = $state(4);
@@ -72,6 +74,7 @@ class ProjectState {
   showOverlay = $state(true);
   showHolo = $state(false);
 
+  typeInfo = $derived(PROJECT_TYPES.find(t => t.id === this.projectType) ?? PROJECT_TYPES[0]);
   outputWidthPx = $derived(Math.round(this.outputWidthInches * this.dpi));
   outputHeightPx = $derived(Math.round(this.outputHeightInches * this.dpi));
   stripWidth = $derived(Math.round(this.dpi / this.lpi));

@@ -42,7 +42,7 @@
     const _border = JSON.stringify(projectState.border);
 
     if (restored) {
-      layoutStore.triggerAutoSave(getSettings());
+      layoutStore.triggerAutoSave(getSettings(), projectState.projectType);
     }
   });
 
@@ -57,6 +57,7 @@
           result.data.name,
           projects[0].id
         );
+        projectState.projectType = result.data.projectType ?? 'lenticular';
         projectState.lpi = result.data.settings.lpi;
         projectState.dpi = result.data.settings.dpi;
         projectState.outputWidthInches = result.data.settings.outputWidthInches;

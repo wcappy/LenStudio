@@ -1,8 +1,9 @@
 <script lang="ts">
   import type { EffectType } from '../../lib/types/index.js';
   import { layoutStore } from '../../lib/stores/layout.svelte.js';
+  import { projectState } from '../../lib/stores/project.svelte.js';
 
-  const effects: { value: EffectType; label: string; icon: string; desc: string }[] = [
+  const allEffects: { value: EffectType; label: string; icon: string; desc: string }[] = [
     { value: 'none', label: 'None', icon: '—', desc: 'Static image, no tilt effect' },
     { value: 'flip', label: 'Flip', icon: '⇄', desc: 'Switch between two images as you tilt' },
     { value: 'animation', label: 'Animation', icon: '▶', desc: 'Play through a sequence of frames' },
@@ -10,6 +11,19 @@
     { value: 'zoom', label: 'Zoom', icon: '⊕', desc: 'Magnify into the image on tilt' },
     { value: 'morph', label: 'Morph', icon: '∞', desc: 'Smoothly blend between two images' },
   ];
+
+  const effects = $derived.by(() => {
+    switch (projectState.projectType) {
+      case 'anaglyph':
+        return allEffects.filter(e => ['none', 'flip'].includes(e.value));
+      case 'parallax':
+        return allEffects.filter(e => ['flip', 'depth3d'].includes(e.value));
+      case 'scanimation':
+        return allEffects.filter(e => ['flip', 'animation', 'morph'].includes(e.value));
+      default:
+        return allEffects;
+    }
+  });
 
   const section = $derived(layoutStore.selectedSection);
 </script>
