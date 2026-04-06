@@ -4,12 +4,19 @@
   import { runExport, EXPORT_FORMATS } from '../../lib/engine/run-export.js';
   import type { ExportFormat } from '../../lib/engine/run-export.js';
   import { exportOverlayPng } from '../../lib/engine/export-overlay.js';
+  import { exportAnaglyphPng } from '../../lib/engine/export-anaglyph.js';
+  import { normalizeFrames } from '../../lib/engine/image-utils.js';
   import { formatFileSize, downloadBlob } from '../../lib/utils/file-helpers.js';
 
   let { open = $bindable(false) }: { open: boolean } = $props();
 
   let selectedFormat = $state<ExportFormat>('tiff');
   let includeOverlay = $state(false);
+  let includeAnaglyph = $state(false);
+
+  const hasEnoughForAnaglyph = $derived(
+    layoutStore.sections.some(s => s.frames.length >= 2)
+  );
 
   const totalFrames = $derived(
     layoutStore.sections.reduce((sum, s) => Math.max(sum, s.frames.length), 0)
@@ -34,17 +41,29 @@
 
   async function handleExport() {
     const wantOverlay = includeOverlay && totalFrames > 1;
+    const wantAnaglyph = includeAnaglyph && hasEnoughForAnaglyph;
     const lpi = projectState.lpi;
     const dpi = projectState.dpi;
     const w = projectState.outputWidthPx;
     const h = projectState.outputHeightPx;
     const frames = totalFrames;
+    // Capture section data for anaglyph before closing
+    const anaglyphSection = wantAnaglyph
+      ? layoutStore.sections.find(s => s.frames.length >= 2)
+      : null;
     open = false;
     await runExport(selectedFormat);
     if (wantOverlay) {
       const blob = await exportOverlayPng(w, h, lpi, dpi, frames);
       const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
       downloadBlob(blob, `tilt-overlay-${ts}.png`);
+    }
+    if (wantAnaglyph && anaglyphSection) {
+      const normalized = normalizeFrames(anaglyphSection.frames.slice(0, 2), w, h);
+      const sorted = [...normalized].sort((a, b) => a.order - b.order);
+      const blob = await exportAnaglyphPng(sorted[0].imageData, sorted[1].imageData);
+      const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      downloadBlob(blob, `tilt-anaglyph-${ts}.png`);
     }
   }
 
@@ -116,14 +135,24 @@
           <span class="estimate-value">~{formatFileSize(estimatedSize)}</span>
         </div>
 
-        <!-- Scanimation overlay -->
-        <label class="overlay-option">
-          <input type="checkbox" bind:checked={includeOverlay} />
-          <div class="overlay-text">
-            <span class="overlay-label">Include scanimation overlay</span>
-            <span class="overlay-desc">Downloads a striped overlay PNG — print on transparency, slide across the image to see animation</span>
-          </div>
-        </label>
+        <!-- Extra outputs -->
+        <div class="extras">
+          <span class="section-label">Extras</span>
+          <label class="overlay-option">
+            <input type="checkbox" bind:checked={includeOverlay} />
+            <div class="overlay-text">
+              <span class="overlay-label">Scanimation overlay</span>
+              <span class="overlay-desc">Striped overlay PNG — print on transparency, slide across to animate</span>
+            </div>
+          </label>
+          <label class="overlay-option" class:disabled={!hasEnoughForAnaglyph}>
+            <input type="checkbox" bind:checked={includeAnaglyph} disabled={!hasEnoughForAnaglyph} />
+            <div class="overlay-text">
+              <span class="overlay-label">Anaglyph 3D (red/cyan)</span>
+              <span class="overlay-desc">{hasEnoughForAnaglyph ? 'Combines first 2 frames into a red/cyan 3D image — viewable with 3D glasses' : 'Needs at least 2 frames'}</span>
+            </div>
+          </label>
+        </div>
       </div>
 
       <div class="modal-footer">
@@ -319,8 +348,19 @@
     transition: background 0.15s;
   }
 
-  .overlay-option:hover {
+  .overlay-option:hover:not(.disabled) {
     background: var(--surface-hover);
+  }
+
+  .overlay-option.disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .extras {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
 
   .overlay-option input[type="checkbox"] {
