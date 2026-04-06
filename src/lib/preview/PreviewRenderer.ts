@@ -21,6 +21,7 @@ export class PreviewRenderer {
   private layoutMode = false;
   private imageMode = false;
   private anaglyphMode = false;
+  private scanimationMode = false;
   private hoveredDivider: string | null = null; // splitId
   private dragTargetId: string | null = null;
 
@@ -64,6 +65,10 @@ export class PreviewRenderer {
 
   setAnaglyphMode(enabled: boolean) {
     this.anaglyphMode = enabled;
+  }
+
+  setScanimationMode(enabled: boolean) {
+    this.scanimationMode = enabled;
   }
 
   setHoveredDivider(splitId: string | null) {
@@ -196,7 +201,9 @@ export class PreviewRenderer {
       this.renderLayoutHandles(dividers);
     }
 
-    if (this.overlayEnabled) {
+    if (this.scanimationMode) {
+      this.renderScanimationBars(viewAngle);
+    } else if (this.overlayEnabled) {
       this.renderOverlay(viewAngle);
     }
 
@@ -518,6 +525,34 @@ export class PreviewRenderer {
     sheenGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
     ctx.fillStyle = sheenGrad;
     ctx.fillRect(0, 0, w, h);
+    ctx.restore();
+  }
+
+  private renderScanimationBars(viewAngle: number) {
+    const { ctx, canvas } = this;
+    const w = canvas.width;
+    const h = canvas.height;
+    const scale = w / this.outputWidthPx;
+    const stripPx = this.printStripWidth * scale;
+    if (stripPx < 1) return;
+
+    // Get frame count from first section with frames
+    const section = this.sections.find(s => s.frames.length > 1);
+    const frameCount = section ? section.frames.length : 2;
+    const slitWidth = stripPx / frameCount;
+    const barWidth = stripPx - slitWidth;
+
+    // Offset slides the bars based on viewAngle
+    const offset = viewAngle * stripPx;
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+    const numStrips = Math.ceil(w / stripPx) + 1;
+
+    for (let i = -1; i < numStrips; i++) {
+      const barStart = i * stripPx + slitWidth + offset;
+      ctx.fillRect(barStart, 0, barWidth, h);
+    }
     ctx.restore();
   }
 
