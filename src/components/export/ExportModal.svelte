@@ -13,6 +13,7 @@
   let selectedFormat = $state<ExportFormat>('tiff');
   let includeOverlay = $state(false);
   let includeAnaglyph = $state(false);
+  let includeBarrier = $state(false);
 
   const hasEnoughForAnaglyph = $derived(
     layoutStore.sections.some(s => s.frames.length >= 2)
@@ -41,6 +42,7 @@
 
   async function handleExport() {
     const wantOverlay = includeOverlay && totalFrames > 1;
+    const wantBarrier = includeBarrier && totalFrames > 1;
     const wantAnaglyph = includeAnaglyph && hasEnoughForAnaglyph;
     const lpi = projectState.lpi;
     const dpi = projectState.dpi;
@@ -57,6 +59,11 @@
       const blob = await exportOverlayPng(w, h, lpi, dpi, frames);
       const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
       downloadBlob(blob, `tilt-overlay-${ts}.png`);
+    }
+    if (wantBarrier) {
+      const blob = await exportOverlayPng(w, h, lpi, dpi, frames);
+      const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      downloadBlob(blob, `tilt-barrier-${ts}.png`);
     }
     if (wantAnaglyph && anaglyphSection) {
       const normalized = normalizeFrames(anaglyphSection.frames.slice(0, 2), w, h);
@@ -143,6 +150,13 @@
             <div class="overlay-text">
               <span class="overlay-label">Scanimation overlay</span>
               <span class="overlay-desc">Striped overlay PNG — print on transparency, slide across to animate</span>
+            </div>
+          </label>
+          <label class="overlay-option">
+            <input type="checkbox" bind:checked={includeBarrier} />
+            <div class="overlay-text">
+              <span class="overlay-label">Parallax barrier mask</span>
+              <span class="overlay-desc">Slit mask PNG — mount at fixed distance for glasses-free 3D viewing</span>
             </div>
           </label>
           <label class="overlay-option" class:disabled={!hasEnoughForAnaglyph}>
