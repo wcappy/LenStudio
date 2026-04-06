@@ -146,21 +146,21 @@
     <button class="btn-icon" onclick={close} title="Close">&times;</button>
   </div>
 
-  <div class="modal-body">
-    <!-- Project Type -->
-    <div class="type-selector">
-      {#each PROJECT_TYPES as type}
-        <button
-          class="type-btn"
-          class:active={selectedType === type.id}
-          onclick={() => (selectedType = type.id)}
-        >
-          <span class="type-name">{type.label}</span>
-          <span class="type-desc">{type.description}</span>
-        </button>
-      {/each}
-    </div>
+  <!-- Project Type -->
+  <div class="type-selector">
+    {#each PROJECT_TYPES as type}
+      <button
+        class="type-btn"
+        class:active={selectedType === type.id}
+        onclick={() => (selectedType = type.id)}
+      >
+        <span class="type-name">{type.label}</span>
+        <span class="type-desc">{type.description}</span>
+      </button>
+    {/each}
+  </div>
 
+  <div class="modal-body">
     <div class="presets-panel">
       <div class="orientation-toggle">
         <button class="orient-btn" class:active={orientation === 'portrait'} onclick={() => { if (orientation !== 'portrait') toggleOrientation(); }}>
@@ -360,22 +360,25 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 6px;
-    padding: 0 24px;
-    margin-top: -8px;
+    padding: 8px 24px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
   }
 
   .type-btn {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: flex-start;
     gap: 2px;
-    padding: 8px 6px;
+    padding: 10px 6px;
     border-radius: 8px;
     border: 1.5px solid var(--border);
     font-size: 11px;
     color: var(--text-secondary);
     transition: border-color 0.15s, color 0.15s;
     text-align: center;
+    min-height: 0;
   }
 
   .type-btn:hover {
