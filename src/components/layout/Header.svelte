@@ -30,6 +30,26 @@
     URL.revokeObjectURL(url);
   }
 
+  function handlePrint() {
+    const canvas = document.querySelector('.preview-canvas') as HTMLCanvasElement;
+    if (!canvas) return;
+    const dataUrl = canvas.toDataURL('image/png');
+    const w = projectState.displayWidth;
+    const h = projectState.displayHeight;
+    const unit = projectState.unit === 'in' ? 'in' : projectState.unit === 'cm' ? 'cm' : 'mm';
+    const printWin = window.open('', '_blank');
+    if (!printWin) return;
+    printWin.document.write(`<!DOCTYPE html>
+<html><head><title>Print — Tilt</title>
+<style>
+  @page { size: ${w}${unit} ${h}${unit}; margin: 0; }
+  body { margin: 0; display: flex; align-items: center; justify-content: center; }
+  img { width: 100%; height: 100%; object-fit: contain; }
+</style></head>
+<body><img src="${dataUrl}" onload="window.print();window.close();" /></body></html>`);
+    printWin.document.close();
+  }
+
   async function handleLoadFile(e: Event) {
     const input = e.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -129,6 +149,18 @@
       aria-label="Toggle theme, current: {projectState.themeMode}"
     >
       {themeIcons[projectState.themeMode]}
+    </button>
+    <button
+      class="btn-ghost save-btn"
+      onclick={handlePrint}
+      disabled={!layoutStore.isAllReady}
+      title="Print"
+    >
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="9" width="10" height="5" rx="1" />
+        <path d="M3 11H1.5a1 1 0 01-1-1V5a1 1 0 011-1h13a1 1 0 011 1v5a1 1 0 01-1 1H13" />
+        <path d="M4 1h8v3H4z" />
+      </svg>
     </button>
     <div class="export-wrapper">
       <button
